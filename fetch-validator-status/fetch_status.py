@@ -320,9 +320,9 @@ if __name__ == "__main__":
     parser.add_argument("--status", action="store_true", help="Get status only.  Suppresses detailed results.")
     
     parser.add_argument("--mlog", action="store_true", help="Metrics log argument uses google sheets api and requires, Google API Credentials json file name (file must be in root folder), google sheet file name and worksheet name. ex: --mlog --json [Json File Name] --file [Google Sheet File Name] --worksheet [Worksheet name]")
-    parser.add_argument("--json", default=os.environ.get('JSON') , help="Google API Credentials json file name (file must be in root folder). Can be specified using the 'JSON' environment variable.")
-    parser.add_argument("--file", default=os.environ.get('FILE') , help="Specify which google sheets file you want to log too. Can be specified using the 'FILE' environment variable.")
-    parser.add_argument("--worksheet", default=os.environ.get('WORKSHEET') , help="Specify which worksheet you want to log too. Can be specified using the 'WORKSHEET' environment variable.")
+    parser.add_argument("--json", default=os.environ.get('JSON') , help="Google API Credentials json file name (file must be in root folder). Can be specified using the 'JSON' environment variable.", nargs='*')
+    parser.add_argument("--file", default=os.environ.get('FILE') , help="Specify which google sheets file you want to log too. Can be specified using the 'FILE' environment variable.", nargs='*')
+    parser.add_argument("--worksheet", default=os.environ.get('WORKSHEET') , help="Specify which worksheet you want to log too. Can be specified using the 'WORKSHEET' environment variable.", nargs='*')
     
     parser.add_argument("--alerts", action="store_true", help="Filter results based on alerts.  Only return data for nodes containing detected 'info', 'warnings', or 'errors'.")
     parser.add_argument("--nodes", help="The comma delimited list of the nodes from which to collect the status.  The default is all of the nodes in the pool.")
@@ -330,6 +330,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     verbose = args.verbose
+
+    # Support names and paths containing spaces.
+    # Other workarounds including the standard of putting '"'s around values containing spaces does not always work.
+    if args.json:
+       args.json = ' '.join(args.json)
+    if args.file:
+       args.file = ' '.join(args.file)
+    if args.worksheet:
+       args.worksheet = ' '.join(args.worksheet)
 
     if args.list_nets:
         print(json.dumps(load_network_list(), indent=2))
