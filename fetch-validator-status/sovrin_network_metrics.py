@@ -24,6 +24,8 @@ def metrics(result, network_name, metrics_log_info):
     if nodes_offline >= networkResilience:
         message = "Network Resilience Danger!"
 
-    row = [time, network_name, num_of_nodes, nodes_offline, networkResilience, message]
+    active_nodes = num_of_nodes - nodes_offline
+
+    row = [time, network_name, num_of_nodes, nodes_offline, networkResilience, active_nodes, message]
     gspread_append_sheet(authD_client, file_name, worksheet_name, row)
     print("\033[1;92;40mPosted to " + file_name + " in sheet " + worksheet_name + ".\033[m")
