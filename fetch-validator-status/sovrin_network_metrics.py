@@ -18,7 +18,7 @@ def metrics(result, network_name, metrics_log_info):
         if node["status"]["ok"] == False:
             nodes_offline += 1
 
-    networkResilience = round((num_of_nodes)/3 + 1)
+    networkResilience = round((num_of_nodes - 1 ) / 3)
 
     # Could have a stepped warning system
     if nodes_offline >= networkResilience:
