@@ -5,6 +5,7 @@ import base64
 import json
 import os
 import sys
+import importlib
 import datetime
 import urllib.request
 from typing import Tuple
@@ -18,7 +19,7 @@ from indy_vdr.ledger import (
     Request,
 )
 from indy_vdr.pool import open_pool
-from sovrin_network_metrics import metrics
+from plugin_collection import PluginCollection
 
 verbose = False
 
@@ -49,6 +50,7 @@ def seed_as_bytes(seed):
 
 
 async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = None, status_only: bool = False, alerts_only: bool = False, network_name: str = None, metrics_log_only: bool = False, metrics_log_info: list = []):
+     # Start of engin
     pool = await open_pool(transactions_path=genesis_path)
     result = []
     verifiers = {}
@@ -127,7 +129,11 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
         print(json.dumps(result, indent=2))
 
     if metrics_log_only:
-        metrics(result, network_name, metrics_log_info)
+        #plugins.metrics(result, network_name, metrics_log_info)
+        # reference 
+        my_plugins = PluginCollection('plugins')
+        my_plugins.apply_all_plugins_on_value(result, network_name, metrics_log_info)
+    
 
 async def get_node_addresses(entry: any, verifiers: any) -> any:
     if verifiers:
@@ -250,6 +256,7 @@ async def get_info(jsval: any, ident: DidKey = None) -> any:
 
     return info
 
+# core to engin?
 async def detect_issues(jsval: any, node: str, primary: str, ident: DidKey = None) -> Tuple[any, any]:
     errors = []
     warnings = []
