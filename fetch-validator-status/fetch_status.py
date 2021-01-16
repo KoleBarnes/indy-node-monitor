@@ -5,7 +5,6 @@ import base64
 import json
 import os
 import sys
-import importlib
 import datetime
 import urllib.request
 from typing import Tuple
@@ -50,7 +49,7 @@ def seed_as_bytes(seed):
 
 
 async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = None, status_only: bool = False, alerts_only: bool = False, network_name: str = None, metrics_log_only: bool = False, metrics_log_info: list = []):
-     # Start of engin
+     # Start of engine
     pool = await open_pool(transactions_path=genesis_path)
     result = []
     verifiers = {}
@@ -129,8 +128,7 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
         print(json.dumps(result, indent=2))
 
     if metrics_log_only:
-        #plugins.metrics(result, network_name, metrics_log_info)
-        # reference 
+        # Git Hub Repo: https://github.com/gdiepen/python_plugin_example
         my_plugins = PluginCollection('plugins')
         my_plugins.apply_all_plugins_on_value(result, network_name, metrics_log_info)
     

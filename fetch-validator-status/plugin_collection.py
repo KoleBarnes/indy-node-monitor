@@ -46,8 +46,6 @@ class Plugin(object):
         raise NotImplementedError
 
 
-
-
 class PluginCollection(object):
     """Upon creation, this class will read the plugins package for modules
     that contain a class definition that is inheriting from the Plugin class

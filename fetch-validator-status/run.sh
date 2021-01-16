@@ -41,6 +41,10 @@ if [ -d "./conf" ]; then
   cmd+=$(getVolumeMount "./conf")
 fi
 
+if [ -d "./plugins" ]; then
+  cmd+=$(getVolumeMount "./plugins")
+fi
+
 cmd+="fetch_status \"$@\""
 eval ${cmd}
 #echo ${cmd}

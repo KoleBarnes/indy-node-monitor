@@ -1,5 +1,5 @@
 '''
-refrn
+Git Hub Repo: https://github.com/gdiepen/python_plugin_example
 '''
 
 import plugin_collection
@@ -13,7 +13,6 @@ class sovrin_network_metrics(plugin_collection.Plugin):
         self.description = 'Sovrin Network Metrics Function'
 
     def perform_operation(self, result, network_name, metrics_log_info):
-        print("In metrics")
         gauth_json = metrics_log_info[0]
         file_name = metrics_log_info[1]
         worksheet_name = metrics_log_info[2]
@@ -43,6 +42,4 @@ class sovrin_network_metrics(plugin_collection.Plugin):
         # gspread_append_sheet(authD_client, file_name, worksheet_name, row)
         print("\033[1;92;40mPosted to " + file_name + " in sheet " + worksheet_name + ".\033[m")
 
-        print("End of metrics")
-
-        return
+        return row
