@@ -70,6 +70,8 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
     except AttributeError:
         pass
 
+    # end of engine
+
     primary = ""
     packages = {}
     for node, val in response.items():
