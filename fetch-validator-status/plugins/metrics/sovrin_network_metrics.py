@@ -5,19 +5,48 @@ Git Hub Repo: https://github.com/gdiepen/python_plugin_example
 import plugin_collection
 #from .google_sheets import gspread_authZ, gspread_append_sheet
 import datetime
+import argparse
+import os
 
 class sovrin_network_metrics(plugin_collection.Plugin):
     
-    def __init__(self):
+    def __init__(self, gauth_json=None, file_name=None, worksheet_name=None):
         super().__init__()
         self.description = 'Sovrin Network Metrics Function'
+        self.gauth_json = gauth_json
+        self.file_name = file_name
+        self.worksheet_name = worksheet_name
 
-    def perform_operation(self, result, network_name, metrics_log_info):
-        gauth_json = metrics_log_info[0]
-        file_name = metrics_log_info[1]
-        worksheet_name = metrics_log_info[2]
+    def parse_args(self, argv=None):
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--mlog", action="store_true", help="Metrics log argument uses google sheets api and requires, Google API Credentials json file name (file must be in root folder), google sheet file name and worksheet name. ex: --mlog --json [Json File Name] --file [Google Sheet File Name] --worksheet [Worksheet name]")
+        parser.add_argument("--json", default=os.environ.get('JSON') , help="Google API Credentials json file name (file must be in root folder). Can be specified using the 'JSON' environment variable.", nargs='*')
+        parser.add_argument("--file", default=os.environ.get('FILE') , help="Specify which google sheets file you want to log too. Can be specified using the 'FILE' environment variable.", nargs='*')
+        parser.add_argument("--worksheet", default=os.environ.get('WORKSHEET') , help="Specify which worksheet you want to log too. Can be specified using the 'WORKSHEET' environment variable.", nargs='*')
+        args, unknown = parser.parse_known_args(argv)
+        
+        # Support names and paths containing spaces.
+        # Other workarounds including the standard of putting '"'s around values containing spaces does not always work.
+        if args.json:
+            args.json = ' '.join(args.json)
+        if args.file:
+            args.file = ' '.join(args.file)
+        if args.worksheet:
+            args.worksheet = ' '.join(args.worksheet)
 
-        #authD_client = gspread_authZ(gauth_json)
+        if args.mlog:
+            if args.json and args.file and args.worksheet:
+                self.gauth_json = args.json
+                self.file_name = args.file
+                self.worksheet_name = args.worksheet
+            else:
+                print('Metrics log argument uses google sheets api and requires, Google API Credentials json file name (file must be in root folder), google sheet file name and worksheet name.')
+                print('ex: --mlog --json [Json File Name] --file [Google Sheet File Name] --worksheet [Worksheet name]')
+                exit()
+
+    def perform_operation(self, result, network_name):
+        print(self.gauth_json, self.file_name, self.worksheet_name)
+        #authD_client = gspread_authZ(self.gauth_json)
         
         message = ""
         num_of_nodes = 0
@@ -39,7 +68,7 @@ class sovrin_network_metrics(plugin_collection.Plugin):
 
         row = [time, network_name, num_of_nodes, nodes_offline, networkResilience, active_nodes, message]
         print(row)
-        # gspread_append_sheet(authD_client, file_name, worksheet_name, row)
-        print("\033[1;92;40mPosted to " + file_name + " in sheet " + worksheet_name + ".\033[m")
+        # gspread_append_sheet(authD_client, self.file_name, self.worksheet_name, row)
+        print("\033[1;92;40mPosted to " + self.file_name + " in sheet " + self.worksheet_name + ".\033[m")
 
         return row

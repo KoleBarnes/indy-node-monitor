@@ -69,14 +69,18 @@ class PluginCollection(object):
         print(f'Looking for plugins under package {self.plugin_package}')
         self.walk_package(self.plugin_package)
 
+    def load_parse_args(self):
+        for plugin in self.plugins:
+            plugin.parse_args()
+            
 
-    def apply_all_plugins_on_value(self, result, network_name, metrics_log_info):
+    def apply_all_plugins_on_value(self, result, network_name):
         """Apply all of the plugins on the argument supplied to this function
         """
         print()
-        print(f'Applying all plugins on value {network_name}, {metrics_log_info}:')
+        print(f'Applying all plugins on value {network_name}:')
         for plugin in self.plugins:
-            print(f'    Applying {plugin.description} on value {network_name}, {metrics_log_info} yields value {plugin.perform_operation(result, network_name, metrics_log_info)}')
+            print(f'    Applying {plugin.description} on value {network_name} yields value {plugin.perform_operation(result, network_name)}')
 
     def walk_package(self, package):
         """Recursively walk the supplied package to retrieve all plugins
