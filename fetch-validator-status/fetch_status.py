@@ -48,7 +48,7 @@ def seed_as_bytes(seed):
     return seed.encode("ascii")
 
 
-async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = None, status_only: bool = False, alerts_only: bool = False, network_name: str = None):
+async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = None, network_name: str = None):
      # Start of engine
     pool = await open_pool(transactions_path=genesis_path)
     result = []
@@ -70,8 +70,9 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
     except AttributeError:
         pass
 
-    # end of engine
+    # end of engine feeds pass to anlz result, response, varifiers
 
+    # Ansys plugin
     primary = ""
     packages = {}
     for node, val in response.items():
@@ -106,10 +107,12 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
             entry["status"]["warnings"] = len(warnings)
             entry["warnings"] = warnings
         # Full Response
-        if not status_only and jsval:
-            entry["response"] = jsval
+        if jsval:
+            entry["response"] = jsval # put into status plugin minus response 
 
         result.append(entry)
+
+        # Ansys plugin end
 
     # Package Mismatches
     if packages:
@@ -118,20 +121,6 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
     # Connection Issues
     await detect_connection_issues(result)
 
-    # Filter on alerts
-    if alerts_only:
-        filtered_result = []
-        for item in result:
-            if ("info" in item["status"]) or ("warnings" in  item["status"]) or ("errors" in  item["status"]):
-                filtered_result.append(item)
-        result = filtered_result
-    
-    if status_only:
-        print(json.dumps(result, indent=2))
-
-    #if metrics_log_only:
-        # Git Hub Repo: https://github.com/gdiepen/python_plugin_example
-        #my_plugins = PluginCollection('plugins')
     my_plugins.apply_all_plugins_on_value(result, network_name)
     
 
@@ -335,6 +324,10 @@ def list_networks():
 if __name__ == "__main__":
     my_plugins = PluginCollection('plugins')
 
+    #my_plugins.plugin_list()
+    my_plugins.sort()
+    my_plugins.plugin_list()
+
     parser = argparse.ArgumentParser(description="Fetch the status of all the indy-nodes within a given pool.")
     parser.add_argument("--net", choices=list_networks(), help="Connect to a known network using an ID.")
     parser.add_argument("--list-nets", action="store_true", help="List known networks.")
@@ -342,15 +335,13 @@ if __name__ == "__main__":
     parser.add_argument("--genesis-path", default=os.getenv("GENESIS_PATH") or f"{get_script_dir()}/genesis.txn" , help="The path to the genesis file describing the ledger pool.  Can be specified using the 'GENESIS_PATH' environment variable.")
     parser.add_argument("-s", "--seed", default=os.environ.get('SEED') , help="The privileged DID seed to use for the ledger requests.  Can be specified using the 'SEED' environment variable.")
     parser.add_argument("-a", "--anonymous", action="store_true", help="Perform requests anonymously, without requiring privileged DID seed.")
-    parser.add_argument("--status", action="store_true", help="Get status only.  Suppresses detailed results.")
     
-    parser.add_argument("--alerts", action="store_true", help="Filter results based on alerts.  Only return data for nodes containing detected 'info', 'warnings', or 'errors'.")
     parser.add_argument("--nodes", help="The comma delimited list of the nodes from which to collect the status.  The default is all of the nodes in the pool.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging.")
     
     args, unknown = parser.parse_known_args()
 
-    my_plugins.load_parse_args()
+    my_plugins.load_parse_args(parser)
 
 
     verbose = args.verbose
@@ -387,4 +378,4 @@ if __name__ == "__main__":
     else:
         ident = None
 
-    asyncio.get_event_loop().run_until_complete(fetch_status(args.genesis_path, args.nodes, ident, args.status, args.alerts, network_name))
+    asyncio.get_event_loop().run_until_complete(fetch_status(args.genesis_path, args.nodes, ident, network_name))

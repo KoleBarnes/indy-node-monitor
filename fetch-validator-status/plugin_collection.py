@@ -37,7 +37,10 @@ class Plugin(object):
     """
 
     def __init__(self):
+        self.index = None
+        self.name = 'UNKNOWN'
         self.description = 'UNKNOWN'
+        self.type = 'UNKNOWN'
 
     def perform_operation(self, argument):
         """The method that we expect all plugins to implement. This is the
@@ -57,7 +60,14 @@ class PluginCollection(object):
         """
         self.plugin_package = plugin_package
         self.reload_plugins()
-
+        
+    def plugin_list(self):
+        for plugin in self.plugins:
+            print(plugin.name)
+        
+    def sort(self):
+        print('Sorting...')
+        self.plugins.sort(key=lambda x: x.index, reverse=False)
 
     def reload_plugins(self):
         """Reset the list of all plugins and initiate the walk over the main
@@ -69,18 +79,20 @@ class PluginCollection(object):
         print(f'Looking for plugins under package {self.plugin_package}')
         self.walk_package(self.plugin_package)
 
-    def load_parse_args(self):
+    def load_parse_args(self, parser):
         for plugin in self.plugins:
-            plugin.parse_args()
+            plugin.parse_args(parser)
             
 
     def apply_all_plugins_on_value(self, result, network_name):
-        """Apply all of the plugins on the argument supplied to this function
+        """Apply all of the plugins with the argument supplied to this function
         """
         print()
-        print(f'Applying all plugins on value {network_name}:')
+        print(f'Running plugins.')
         for plugin in self.plugins:
-            print(f'    Applying {plugin.description} on value {network_name} yields value {plugin.perform_operation(result, network_name)}')
+            print(f'    Running {plugin.name}:')
+            value = plugin.perform_operation(result, network_name)
+            print((f'    {plugin.description} yields value {value}'))
 
     def walk_package(self, package):
         """Recursively walk the supplied package to retrieve all plugins
