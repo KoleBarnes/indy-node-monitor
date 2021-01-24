@@ -92,7 +92,7 @@ class PluginCollection(object):
         for plugin in self.plugins:
             print(f'    Running {plugin.name}:')
             value = plugin.perform_operation(result, network_name)
-            print((f'    {plugin.description} yields value {value}'))
+            print((f'    {plugin.name} yields value {value}'))
 
     def walk_package(self, package):
         """Recursively walk the supplied package to retrieve all plugins

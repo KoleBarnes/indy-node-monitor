@@ -123,7 +123,7 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
 
     my_plugins.apply_all_plugins_on_value(result, network_name)
     
-
+# ansys plug-in
 async def get_node_addresses(entry: any, verifiers: any) -> any:
     if verifiers:
         node_name = entry["name"]
@@ -164,7 +164,7 @@ async def detect_connection_issues(result: any) -> any:
             node["status"]["errors"] = len(node["errors"])
             node["status"]["ok"] = (len(node["errors"]) <= 0)
 
-
+# Ansys Plug-in
 async def get_primary_name(jsval: any, node: str) -> str:
     primary = ""
     if "REPLY" in jsval["op"]:
@@ -172,7 +172,7 @@ async def get_primary_name(jsval: any, node: str) -> str:
             primary = jsval["result"]["data"]["Node_info"]["Replicas_status"][node+":0"]["Primary"]
     return primary
 
-
+# Ansys plug-in
 async def get_status_summary(jsval: any, errors: list) -> any:
     status = {}
     status["ok"] = (len(errors) <= 0)
@@ -188,6 +188,7 @@ async def get_status_summary(jsval: any, errors: list) -> any:
 
     return status
 
+# Ansys plug-in
 async def get_package_info(jsval: any) -> any:
     packages = {}
     if jsval and ("REPLY" in jsval["op"]):
@@ -232,7 +233,7 @@ async def merge_package_mismatch_info(result: any, packages: any):
                 entry_to_update["warnings"] = package_warnings[node_name]
             entry_to_update["status"]["warnings"] = len(entry_to_update["warnings"])
 
-
+# ansys plug-in
 async def get_info(jsval: any, ident: DidKey = None) -> any:
     info = []
     if "REPLY" in jsval["op"]:
@@ -245,7 +246,7 @@ async def get_info(jsval: any, ident: DidKey = None) -> any:
 
     return info
 
-# core to engin?
+# core to engin? Ansys PLug-in?
 async def detect_issues(jsval: any, node: str, primary: str, ident: DidKey = None) -> Tuple[any, any]:
     errors = []
     warnings = []

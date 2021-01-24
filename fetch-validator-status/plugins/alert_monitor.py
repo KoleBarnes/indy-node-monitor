@@ -8,7 +8,7 @@ class main(plugin_collection.Plugin):
     
     def __init__(self,  alerts_only = None):
         super().__init__()
-        self.index = 1
+        self.index = 2
         self.name = 'Alerts'
         self.description = ''
         self.type = ''
@@ -35,10 +35,7 @@ class main(plugin_collection.Plugin):
                 if ("info" in item["status"]) or ("warnings" in  item["status"]) or ("errors" in  item["status"]):
                     filtered_result.append(item)
             result = filtered_result
-            if result:
-                print(result)
-            else:
-                print('No Alerts.')
+            print(result)
         
         else:
             print(self.description, 'not used skipping.')

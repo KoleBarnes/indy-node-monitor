@@ -5,7 +5,7 @@ class main(plugin_collection.Plugin):
     
     def __init__(self, status_only: bool = False):
         super().__init__()
-        self.index = 2
+        self.index = 3
         self.name = 'status_only'
         self.description = ''
         self.type = ''
