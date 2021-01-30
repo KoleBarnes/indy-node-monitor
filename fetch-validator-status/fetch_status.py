@@ -55,7 +55,7 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
         try:
             pool = await open_pool(transactions_path=genesis_path)
         except:
-            print("Pool Timed Out! Trying again...")
+            if verbose: print("Pool Timed Out! Trying again...")
             continue
         break
 
