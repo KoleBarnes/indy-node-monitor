@@ -19,6 +19,7 @@ from indy_vdr.ledger import (
 )
 from indy_vdr.pool import open_pool
 from plugin_collection import PluginCollection
+import time
 
 verbose = False
 
@@ -49,8 +50,15 @@ def seed_as_bytes(seed):
 
 
 async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = None, network_name: str = None):
-     # Start of engine
-    pool = await open_pool(transactions_path=genesis_path)
+    # Start of engine
+    while True:
+        try:
+            pool = await open_pool(transactions_path=genesis_path)
+        except:
+            print("Pool Timed Out! Trying again...")
+            continue
+        break
+
     result = []
     verifiers = {}
 
