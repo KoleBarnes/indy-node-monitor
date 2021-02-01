@@ -3,6 +3,7 @@ import plugin_collection
 import datetime
 import argparse
 import os
+import logging
 
 class main(plugin_collection.Plugin):
     
@@ -27,15 +28,21 @@ class main(plugin_collection.Plugin):
             self.alerts_only = args.alerts
 
     def perform_operation(self, result, network_name):
-
         # Filter on alerts
         if self.alerts_only:
+            logging.basicConfig(filename='./logs/alerts.log', datefmt='%m/%d/%Y %I:%M:%S %p', format='%(asctime)s: %(levelname)s: %(message)s', level=logging.DEBUG)
             filtered_result = []
             for item in result:
                 if ("info" in item["status"]) or ("warnings" in  item["status"]) or ("errors" in  item["status"]):
                     filtered_result.append(item)
             result = filtered_result
             print(result)
+            if result: logging.warning(result)
+            # Put CSV to store nodes that are down, for how long and if they have been notified at given times (2 hours, 24 hours)
+            # CSV to store email creds. Use tokens for email password if possible. 
         
         else:
             print(self.description, 'not used skipping.')
+
+    def notify(self):
+        pass

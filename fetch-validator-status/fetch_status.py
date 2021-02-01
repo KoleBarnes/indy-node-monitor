@@ -21,6 +21,7 @@ from indy_vdr.pool import open_pool
 from plugin_collection import PluginCollection
 import time
 
+global verbose
 verbose = False
 
 
