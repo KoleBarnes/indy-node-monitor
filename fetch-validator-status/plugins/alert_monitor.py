@@ -4,6 +4,7 @@ import datetime
 import argparse
 import os
 import logging
+import json
 
 class main(plugin_collection.Plugin):
     
@@ -37,6 +38,7 @@ class main(plugin_collection.Plugin):
                     filtered_result.append(item)
             result = filtered_result
             print(result)
+            print(json.dumps(result, indent=2))
             if result: logging.warning(result)
             # Put CSV to store nodes that are down, for how long and if they have been notified at given times (2 hours, 24 hours)
             # CSV to store email creds. Use tokens for email password if possible. 
