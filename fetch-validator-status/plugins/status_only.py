@@ -19,6 +19,7 @@ class main(plugin_collection.Plugin):
     
     def perform_operation(self, result, network_name):
         if self.status_only:
-            #for node in result:
-                #del node["response"]
+            for node in result:
+                if "response" in node:
+                    node.pop("response")
             print(json.dumps(result, indent=2))
