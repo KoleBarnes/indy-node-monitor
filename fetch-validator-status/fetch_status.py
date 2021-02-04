@@ -51,6 +51,11 @@ def seed_as_bytes(seed):
 
 
 async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = None, network_name: str = None):
+
+    result = [{'name': 'Medici', 'client-address': 'tcp://35.225.188.183:9702', 'node-address': 'tcp://34.66.79.136:9701', 'status': {'ok': False, 'errors': 1}, 'errors': ['timeout']}]
+    my_plugins.apply_all_plugins_on_value(result, network_name)
+    exit()
+
     # Start of engine
     while True:
         try:

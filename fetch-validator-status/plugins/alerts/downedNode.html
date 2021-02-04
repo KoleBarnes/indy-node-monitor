@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <header>
+            <h1 style="color:orange; background-color: #001B42; margin-right: 100%; margin-top: 20px; margin-bottom: 20px;">
+                <a href="https://sovrin.org">
+                    <img src="https://sovrin.org/wp-content/themes/sovrin/assets/images/logo.svg">
+                </a>
+            </h1>
+        </header>
+
+        <main>
+            <p>Hello,</p>
+
+            <p>Our monitoring script shows that your node {node} is not responding to other nodes on the {network_name} network.  Please have a look at it and see if you can fix it. Often a simple restart will fix the problem:</p>
+
+            <p style="background-color: lightgray;">sudo systemctl restart indy-node</p>
+
+            <p>If that does not work to restore your node to full operation, please send the following logs so that we can determine and fix the problem:</p>
+
+            <ul style="background-color: lightgray;">
+                <li>/var/log/indy/sandbox/Medici.log</li>
+                <li>sudo journalctl -u indy-node</li>
+                <li>sudo journalctl -u indy-node-control</li>
+                <li>sudo validator-info -v </li>
+            </ul>
+
+            <p>If you need help, send some times that you are available today and we will see if we can set up a zoom call.</p>
+
+            <p>Thanks!</p>
+
+            <p>Network Operations
+                Sovrin Foundation</p>
+        
+        </main>
+    </body>
+</html>

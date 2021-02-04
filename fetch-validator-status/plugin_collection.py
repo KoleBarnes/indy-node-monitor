@@ -88,11 +88,11 @@ class PluginCollection(object):
         """Apply all of the plugins with the argument supplied to this function
         """
         print()
-        print(f'Running plugins.')
+        print(f'Running plugins.\n')
         for plugin in self.plugins:
-            print(f'    Running {plugin.name}:')
+            print(f'Running {plugin.name}:')
             value = plugin.perform_operation(result, network_name)
-            print((f'    {plugin.name} yields value {value}'))
+            print((f'    {plugin.name} yields value {value}\n'))
 
     def walk_package(self, package):
         """Recursively walk the supplied package to retrieve all plugins

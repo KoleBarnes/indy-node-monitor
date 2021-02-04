@@ -5,6 +5,9 @@ import argparse
 import os
 import logging
 import json
+import smtplib
+from email.message import EmailMessage
+import codecs
 
 class main(plugin_collection.Plugin):
     
@@ -37,14 +40,39 @@ class main(plugin_collection.Plugin):
                 if ("info" in item["status"]) or ("warnings" in  item["status"]) or ("errors" in  item["status"]):
                     filtered_result.append(item)
             result = filtered_result
-            print(result)
+            
+            #print(result)
             print(json.dumps(result, indent=2))
-            if result: logging.warning(result)
+            
+            if result: 
+                for node in result:
+                    #logging.warning(json.dumps(result, indent=2))
+                    self.notify(node["name"], network_name)
             # Put CSV to store nodes that are down, for how long and if they have been notified at given times (2 hours, 24 hours)
-            # CSV to store email creds. Use tokens for email password if possible. 
         
         else:
             print(self.description, 'not used skipping.')
 
-    def notify(self):
+    def notify(self, node, network_name):
+        EMAIL_ADDRESS = os.environ.get('Sovrin_Email_App_User')
+        EMAIL_PASSWORD = os.environ.get('Sorvin_Email_App_Pwd')
+        EMAIL_RECIPIENT = [EMAIL_ADDRESS]
+
+        msg = EmailMessage()
+        msg['Subject'] = f'Your node ({node}) on the {network_name} needs attention'
+        msg['From'] = EMAIL_ADDRESS
+        msg['To'] = EMAIL_RECIPIENT
+        
+        msg.set_content('This is a plan text email')
+
+        html = codecs.open("./plugins/alerts/downedNode.html", "r", "utf-8")
+        html = html.read()
+
+        msg.add_alternative(html, subtype='html')
+
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            smtp.send_message(msg)
+            print('Email Sent!')
+
         pass
