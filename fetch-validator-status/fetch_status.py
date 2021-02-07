@@ -52,7 +52,7 @@ def seed_as_bytes(seed):
 
 async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = None, network_name: str = None):
 
-    result = [{'name': 'Medici', 'client-address': 'tcp://35.225.188.183:9702', 'node-address': 'tcp://34.66.79.136:9701', 'status': {'ok': False, 'errors': 1}, 'errors': ['timeout']}]
+    result = [{'name': 'Medici', 'client-address': 'tcp://35.225.188.183:9702', 'node-address': 'tcp://34.66.79.136:9701', 'status': {'ok': False, 'timestamp': '1612731833', 'errors': 1}, 'errors': ['timeout']}]
     my_plugins.apply_all_plugins_on_value(result, network_name)
     exit()
 
@@ -195,6 +195,8 @@ async def get_status_summary(jsval: any, errors: list) -> any:
             status["uptime"] = str(datetime.timedelta(seconds = jsval["result"]["data"]["Node_info"]["Metrics"]["uptime"]))
         if "timestamp" in jsval["result"]["data"]:
             status["timestamp"] = jsval["result"]["data"]["timestamp"]
+        else:
+            status["timestamp"] = datetime.datetime.now().strftime('%s')
         if "Software" in jsval["result"]["data"]:
             status["software"] = {}
             status["software"]["indy-node"] = jsval["result"]["data"]["Software"]["indy-node"]

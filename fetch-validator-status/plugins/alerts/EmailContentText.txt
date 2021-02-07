@@ -1,0 +1,19 @@
+Hello,
+
+Our monitoring script shows that your node ({node}) is not responding to other nodes on the {network_name} network.  Please have a look at it and see if you can fix it. Often a simple restart will fix the problem:
+
+   sudo systemctl restart indy-node
+
+If that does not work to restore your node to full operation, please send the following logs so that we can determine and fix the problem:
+
+   /var/log/indy/{log_folder}/{node}.log
+   sudo journalctl -u indy-node 
+   sudo journalctl -u indy-node-control
+   sudo validator-info -v
+
+If you need help, send some times that you are available today and we will see if we can set up a zoom call.
+
+Thanks!
+
+Network Operations
+Sovrin Foundation

@@ -47,8 +47,8 @@ if [ -d "./plugins" ]; then
   cmd+=$(getVolumeMount "./plugins")
 fi
 
-if [ -d "./logs" ]; then
-  cmd+=$(getVolumeMount "./logs")
+if [ -d "./plugins/alerts/JsonAlertLogs/" ]; then
+  cmd+=$(getVolumeMount "./plugins/alerts/JsonAlertLogs/")
 fi
 
 cmd+="fetch_status \"$@\""
