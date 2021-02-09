@@ -59,7 +59,9 @@ class main(plugin_collection.Plugin):
                             data = json.load(json_file)
 
                         # Go throught the stages of the alert (skipping node info) untill a stage with email_sent = False, then get the contents from that stage and send email.
+                        object_count = 0
                         for thing in data:
+                            object_count += 1
                             if thing != 'node':
                                 if data[thing]["email_sent"] == False:
                                     stage = thing
@@ -71,7 +73,7 @@ class main(plugin_collection.Plugin):
                                     cc_email = data[thing]["cc_email"]
                                     break
                                 # If all emails have been sent; stop. 
-                                elif thing == 'stageThree' and data[thing]["email_sent"] == True:
+                                elif object_count == len(data):
                                     ALL_EMAILS_SENT = True
 
                         if not ALL_EMAILS_SENT:
@@ -90,10 +92,10 @@ class main(plugin_collection.Plugin):
                                 # Send email
                                 email_sent = self.notify(node["name"], network_name, recipients_email, cc_email, html_content, plainText_content)
                                 if email_sent:
-                                    # Open and update the Alert with the current time and that the email was sent in order to increase the stage the alerts is in. 
+                                    # Open and update the Alert with the current time and that the email was sent in order to increase the stage the alerts is in.
+                                    data[stage]["email_sent"] = email_sent
+                                    data[stage]["time_sent"] = str(datetime.datetime.now().strftime('%s'))
                                     with open(f'{alert_log_path}{node["name"]}.json', 'w') as json_file:
-                                        data[stage]["email_sent"] = email_sent
-                                        data[stage]["time_sent"] = str(datetime.datetime.now().strftime('%s'))
                                         data.update(data)
                                         json_file.seek(0)
                                         json.dump(data, json_file, indent=2)
@@ -105,7 +107,7 @@ class main(plugin_collection.Plugin):
                                 print(f'{stage} Email will be sent in {email_eta} to {node["name"]} on network {network_name} if not resolved.')
 
                         else:
-                            print(f'All emails have been sent for {node["name"]}.')
+                            print(f'All emails have been sent to {node["name"]}.')
 
                     # Create a file for the new alert if there isn't one.
                     else:
