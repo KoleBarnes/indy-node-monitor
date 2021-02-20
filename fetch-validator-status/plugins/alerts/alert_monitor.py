@@ -5,6 +5,7 @@ import os
 import json
 import smtplib
 from email.message import EmailMessage
+import requests
 
 class main(plugin_collection.Plugin):
     
@@ -37,25 +38,87 @@ class main(plugin_collection.Plugin):
                     filtered_result.append(item)
             result = filtered_result
 
-            print(json.dumps(result, indent=2))
+            # print(json.dumps(result, indent=2))
 
             if result: 
+                
+                page = 0
+                AIRTABLE_API_KEY = os.environ.get('Airtable_API_Key')
+                params = {}
+                headers = {"Authorization": "Bearer " + AIRTABLE_API_KEY}
+                #Companies_url = "https://api.airtable.com/v0/appq6dtcBJNmgbmCt/Companies"
+                Steward_Nodes_url = "https://api.airtable.com/v0/appq6dtcBJNmgbmCt/Steward%20Nodes"
+                Contacts_url = "https://api.airtable.com/v0/appq6dtcBJNmgbmCt/Contacts"
+
+                Steward_Nodes_res = requests.get( Steward_Nodes_url, headers=headers).json()
+                #print(json.dumps(Steward_Nodes_res, indent=2))
+
                 for node in result:
-                    
+
                     ''' 
-                    - Get node name from file not results?
-                    - Get recipients_email from airtable
-                    - Delete alert files when there aren't alerts/alerts have been resolved
+                    - Archive alert files when there aren't alerts/alerts have been resolved
                     '''
 
+                    node_name = node["name"]
                     alert_log_path = "./plugins/alerts/AlertLogs/"
                     ALL_EMAILS_SENT = False
+                    
+                    # Take the network_name and the node_name of the node that is down and get the company ID (airtable company instance ID) from airtable
+                    for piece in Steward_Nodes_res["records"]:
+                        if piece["fields"]["Network"] == network_name:
+                            if "Nodes" in piece["fields"] or "Company" in piece["fields"]:
+                                if piece["fields"]["Nodes"] == node_name:
+                                    AirTable_Company_ID = piece["fields"]["Company"]
+                                    print(f"company ID: {AirTable_Company_ID} Node Name: {node_name}\n")
+
+                    # Go through evey contact and find the contacts that have the matching company ID (airtable company instance ID). Get their contact types and see if they are the tachnical contact and get their info.
+                    hey = True
+                    while hey:
+                        Contacts_res = requests.get(Contacts_url, params=params, headers=headers).json()
+                        #print(json.dumps(Contacts_res, indent=2))
+
+                        for piece in Contacts_res["records"]:
+                            if piece["fields"]["Company"] == AirTable_Company_ID:
+                                if "Contact Type" in piece["fields"]:
+                                    Contact_Type = piece["fields"]["Contact Type"]
+                                else:
+                                    Email = None
+
+                                if "Technical" in Contact_Type: 
+                                
+                                    if "First Name" in piece["fields"]:
+                                        First_Name = piece["fields"]["First Name"]
+                                    else:
+                                        First_Name = None
+
+                                    if "Last Name" in piece["fields"]:
+                                        Last_Name = piece["fields"]["Last Name"]
+                                    else:
+                                        Last_Name = None
+
+                                    if "Email" in piece["fields"]:
+                                        Email = piece["fields"]["Email"]
+                                    else:
+                                        Email = None
+
+                                    print(f"\nName: {First_Name} {Last_Name}\nContact Type: {Contact_Type}\nEmail: {Email}\n")
+
+                        # Pagination
+                        # The airtable server returns one page of records at a time. Each page will contain 100 records by default.
+                        # If there are more records, the response will contain an offset. We then use the offset in params to get the next page of records.
+                        # Pagination will stop when you've reached the end of the table.
+                        page += 1
+                        if "offset" in Contacts_res:
+                            params["offset"] = Contacts_res["offset"]
+                        else:
+                            params["offset"] = None
+                            hey = False
 
                     # If Alert already exist work with it; else create an Alert
-                    if os.path.exists(f'{alert_log_path}{node["name"]}.json'):
+                    if os.path.exists(f'{alert_log_path}{node_name}.json'):
 
                         # Get Alert Json Content
-                        with open(f'{alert_log_path}{node["name"]}.json', 'r') as json_file:
+                        with open(f'{alert_log_path}{node_name}.json', 'r') as json_file:
                             data = json.load(json_file)
 
                         # Go throught the stages of the alert (skipping node info) untill a stage with email_sent = False, then get the contents from that stage and send email.
@@ -90,24 +153,24 @@ class main(plugin_collection.Plugin):
                             # StageOne: 2 hours/120 minutes. StageTwo: 24 hours/1440 minutes. StageThree: 48 Hours/2880 minutes.
                             if minutes >= time_till_email:
                                 # Send email
-                                email_sent = self.notify(node["name"], network_name, recipients_email, cc_email, html_content, plainText_content)
+                                email_sent = self.notify(node_name, network_name, recipients_email, cc_email, html_content, plainText_content)
                                 if email_sent:
                                     # Open and update the Alert with the current time and that the email was sent in order to increase the stage the alerts is in.
                                     data[stage]["email_sent"] = email_sent
                                     data[stage]["time_sent"] = str(datetime.datetime.now().strftime('%s'))
-                                    with open(f'{alert_log_path}{node["name"]}.json', 'w') as json_file:
+                                    with open(f'{alert_log_path}{node_name}.json', 'w') as json_file:
                                         data.update(data)
                                         json_file.seek(0)
                                         json.dump(data, json_file, indent=2)
-                                    print(f'{stage} email Sent to {node["name"]} on network {network_name}!') 
+                                    print(f'{stage} email Sent to {node_name} on network {network_name}!') 
 
                             # States when the next email will be sent for the next stage.
                             elif minutes < time_till_email:
                                 email_eta = time_till_email - minutes
-                                print(f'{stage} Email will be sent in {email_eta} to {node["name"]} on network {network_name} if not resolved.')
+                                print(f'{stage} Email will be sent in {email_eta} to {node_name} on network {network_name} if not resolved.')
 
                         else:
-                            print(f'All emails have been sent to {node["name"]}.')
+                            print(f'All emails have been sent to {node_name}.')
 
                     # Create a file for the new alert if there isn't one.
                     else:
@@ -125,7 +188,7 @@ class main(plugin_collection.Plugin):
                         }
 
                         # Create Alert file with dict above.
-                        with open(f'{alert_log_path}{node["name"]}.json', 'w') as outfile:
+                        with open(f'{alert_log_path}{node_name}.json', 'w') as outfile:
                             json.dump(alert, outfile, indent=2)
                             print('Log created.')
                         
