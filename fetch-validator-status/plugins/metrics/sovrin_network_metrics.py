@@ -71,7 +71,7 @@ class main(plugin_collection.Plugin):
             row = [time, network_name, num_of_nodes, nodes_offline, networkResilience, active_nodes, message]
             print(row)
             # gspread_append_sheet(authD_client, self.file_name, self.worksheet_name, row)
-            print("\033[1;92;40mPosted to " + self.file_name + " in sheet " + self.worksheet_name + ".\033[m")
+            print(f"\033[1;92;40mPosted to {self.file_name} in sheet {self.worksheet_name}.\033[m")
 
         # else:
         #     print(self.description, 'not used skipping.')
