@@ -51,6 +51,7 @@ class main(plugin_collection.Plugin):
                     - Take out Email content from there individual files and just have them all in one file
 
                     - call all stages feilds steps in the json file
+
                     - pop node from the data pulled from the json file once the data has been colected then use
                       time till email to sort the steps with (key=lambda x: x.index, reverse=False) then
                       go throught the steps to see when and if an email is to be sent.
@@ -72,10 +73,10 @@ class main(plugin_collection.Plugin):
                         for thing in data:
                             object_count += 1
                             if thing != 'node':
-                                if data[thing]["email_sent"] == False:
+                                if not data[thing]["time_sent"]:
                                     stage = thing
-                                    time_till_email = data[thing]["time_till_email"]
                                     epoch_time = int(data["node"]["status"]["timestamp"])
+                                    time_till_email = data[thing]["time_till_email"]
                                     html_content = data[thing]["HTML_content"]
                                     plainText_content = data[thing]["plainText_content"]
                                     recipients_email = data[thing]["recipients_email"]
@@ -171,7 +172,7 @@ class main(plugin_collection.Plugin):
         companies_url = "https://api.airtable.com/v0/appq6dtcBJNmgbmCt/Companies/"
         contacts_url = "https://api.airtable.com/v0/appq6dtcBJNmgbmCt/Contacts/"
 
-        # Gets the list of company contacts associated with the company from airtable
+        # Gets the company name by filtering for the alerted node listed with the company from airtable.
         companies_url = companies_url + f'?filterByFormula=%7BSteward Nodes%7D="{node_name}"'
         response = requests.get(companies_url, headers=headers)
         airtable_response = response.json()
@@ -180,9 +181,9 @@ class main(plugin_collection.Plugin):
         for record in airtable_records:
             if "Company Name" in record["fields"]:
                 company_name = record["fields"]["Company Name"]
-                print(company_name)
+                # print(company_name)
         
-        # Gets the technical contacts associated with the company from airtable.
+        # Filters and gets the technical contacts associated with the company from airtable.
         contacts_url = contacts_url + f'?filterByFormula=AND(Company="{company_name}", SEARCH("Technical",%7BContact Type copy%7D))'
         response = requests.get(contacts_url, headers=headers)
         airtable_response = response.json()
@@ -203,9 +204,9 @@ class main(plugin_collection.Plugin):
 
         alert = {
             "node": node,
-            "stageOne": {"email_sent": False, "time_sent": None, "time_till_email": 120, "HTML_content": email_content_path + "StageOne/StageOneEmail.html", "plainText_content": email_content_path + "StageOne/StageOneEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email},
-            "stageTwo": {"email_sent": False, "time_sent": None, "time_till_email": 1440, "HTML_content": email_content_path + "StageTwo/StageTwoEmail.html", "plainText_content": email_content_path + "StageTwo/StageTwoEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email},
-            "stageThree": {"email_sent": False, "time_sent": None, "time_till_email": 2880, "HTML_content": email_content_path + "StageThree/StageThreeEmail.html", "plainText_content": email_content_path + "StageThree/StageThreeEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email}
+            "stageOne": {"time_sent": None, "time_till_email": 120, "HTML_content": email_content_path + "StageOne/StageOneEmail.html", "plainText_content": email_content_path + "StageOne/StageOneEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email},
+            "stageTwo": {"time_sent": None, "time_till_email": 1440, "HTML_content": email_content_path + "StageTwo/StageTwoEmail.html", "plainText_content": email_content_path + "StageTwo/StageTwoEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email},
+            "stageThree": {"time_sent": None, "time_till_email": 2880, "HTML_content": email_content_path + "StageThree/StageThreeEmail.html", "plainText_content": email_content_path + "StageThree/StageThreeEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email}
         }
 
         # Create Alert file with dict above.
