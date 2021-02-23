@@ -45,10 +45,6 @@ class main(plugin_collection.Plugin):
 
                     ''' 
                     - Archive alert files when there aren't alerts/alerts have been resolved
-                    
-                    - get rid of email sent and use time sent if its not null then the was sent
-                    
-                    - Take out Email content from there individual files and just have them all in one file
 
                     - call all stages feilds steps in the json file
 
@@ -204,9 +200,9 @@ class main(plugin_collection.Plugin):
 
         alert = {
             "node": node,
-            "stageOne": {"time_sent": None, "time_till_email": 120, "HTML_content": email_content_path + "StageOne/StageOneEmail.html", "plainText_content": email_content_path + "StageOne/StageOneEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email},
-            "stageTwo": {"time_sent": None, "time_till_email": 1440, "HTML_content": email_content_path + "StageTwo/StageTwoEmail.html", "plainText_content": email_content_path + "StageTwo/StageTwoEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email},
-            "stageThree": {"time_sent": None, "time_till_email": 2880, "HTML_content": email_content_path + "StageThree/StageThreeEmail.html", "plainText_content": email_content_path + "StageThree/StageThreeEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email}
+            "stageOne": {"time_sent": None, "time_till_email": 120, "HTML_content": email_content_path + "StageOneEmail.html", "plainText_content": email_content_path + "StageOneEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email},
+            "stageTwo": {"time_sent": None, "time_till_email": 1440, "HTML_content": email_content_path + "StageTwoEmail.html", "plainText_content": email_content_path + "StageTwoEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email},
+            "stageThree": {"time_sent": None, "time_till_email": 2880, "HTML_content": email_content_path + "StageThreeEmail.html", "plainText_content": email_content_path + "StageThreeEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email}
         }
 
         # Create Alert file with dict above.
