@@ -37,7 +37,6 @@ class main(plugin_collection.Plugin):
                 if ("info" in item["status"]) or ("warnings" in  item["status"]) or ("errors" in  item["status"]):
                     filtered_result.append(item)
             result = filtered_result
-
             # print(json.dumps(result, indent=2))
 
             if result: 
@@ -46,16 +45,18 @@ class main(plugin_collection.Plugin):
                     ''' 
                     - Archive alert files when there aren't alerts/alerts have been resolved
 
-                    - call all stages feilds steps in the json file
-
-                    - pop node from the data pulled from the json file once the data has been colected then use
-                      time till email to sort the steps with (key=lambda x: x.index, reverse=False) then
+                    - use time till email to sort the steps with (key=lambda x: x.index, reverse=False) then
                       go throught the steps to see when and if an email is to be sent.
                     '''
 
                     node_name = node["name"]
                     alert_log_path = "./plugins/alerts/AlertLogs/"
                     ALL_EMAILS_SENT = False
+
+                    # Create a file for the new alert if there isn't one.
+                    # if not os.path.exists(f'{alert_log_path}{node_name}.json'):
+                    #     recipients_email = self.get_contact_info(node_name)
+                    #     self.create_alert_log(node, node_name, alert_log_path, recipients_email)
 
                     # If Alert already exist work with it; else create an Alert
                     if os.path.exists(f'{alert_log_path}{node_name}.json'):
@@ -64,23 +65,20 @@ class main(plugin_collection.Plugin):
                         with open(f'{alert_log_path}{node_name}.json', 'r') as json_file:
                             data = json.load(json_file)
 
-                        # Go throught the stages of the alert (skipping node info) untill a stage with email_sent = False, then get the contents from that stage and send email.
-                        object_count = 0
-                        for thing in data:
-                            object_count += 1
-                            if thing != 'node':
-                                if not data[thing]["time_sent"]:
-                                    stage = thing
-                                    epoch_time = int(data["node"]["status"]["timestamp"])
-                                    time_till_email = data[thing]["time_till_email"]
-                                    html_content = data[thing]["HTML_content"]
-                                    plainText_content = data[thing]["plainText_content"]
-                                    recipients_email = data[thing]["recipients_email"]
-                                    cc_email = data[thing]["cc_email"]
-                                    break
-                                # If all emails have been sent; stop. 
-                                elif object_count == len(data):
-                                    ALL_EMAILS_SENT = True
+                        # Go throught the stages of the alert until a stage with time_sent = Null, then get info.
+                        num_stages = data["notify"]
+                        for stage in num_stages:
+                            if not data["notify"][stage]["time_sent"]:
+                                epoch_time = int(data["node"]["status"].get("timestamp"))
+                                recipients_email = data["contactInfo"].get("recipients_email")
+                                cc_email = data["contactInfo"].get("cc_email")
+                                time_till_email = data["notify"][stage].get("time_till_email")
+                                html_content = data["notify"][stage].get("HTML_content")
+                                plainText_content = data["notify"][stage].get("plainText_content")
+                                break
+                        # If all emails have been sent; stop. 
+                        else:
+                            ALL_EMAILS_SENT = True
 
                         if not ALL_EMAILS_SENT:
                             # Convert epoch time from node and the current time
@@ -93,14 +91,13 @@ class main(plugin_collection.Plugin):
                             minutes = total_seconds/60
 
                             # Find out if it is time to send an email based on time from the stage the alert is in. 
-                            # StageOne: 2 hours/120 minutes. StageTwo: 24 hours/1440 minutes. StageThree: 48 Hours/2880 minutes.
+                            # 1: 2 hours/120 minutes. 2: 24 hours/1440 minutes. 3: 48 Hours/2880 minutes.
                             if minutes >= time_till_email:
                                 # Send email
                                 email_sent = self.notify(node_name, network_name, recipients_email, cc_email, html_content, plainText_content)
                                 if email_sent:
-                                    # Open and update the Alert with the current time and that the email was sent in order to increase the stage the alerts is in.
-                                    data[stage]["email_sent"] = email_sent
-                                    data[stage]["time_sent"] = str(datetime.datetime.now().strftime('%s'))
+                                    # Open and update the alert with the time the email was sent.
+                                    data["notify"][stage]["time_sent"] = str(datetime.datetime.now().strftime('%s'))
                                     with open(f'{alert_log_path}{node_name}.json', 'w') as json_file:
                                         data.update(data)
                                         json_file.seek(0)
@@ -162,6 +159,32 @@ class main(plugin_collection.Plugin):
 
     def get_contact_info(self, node_name):
 
+        # Returns one item from a field in airtable
+        def get_records(url, headers, item):
+            response = requests.get(url, headers=headers)
+            airtable_response = response.json()
+            # print(json.dumps(airtable_response, indent=2))
+            airtable_records = airtable_response["records"][0]
+            item = airtable_records["fields"].get(item)
+            print(item)
+            return(item)
+
+        AIRTABLE_API_KEY = os.environ.get('Airtable_API_Key')
+        headers = {"Authorization": "Bearer " + AIRTABLE_API_KEY}
+        companies_url = "https://api.airtable.com/v0/appq6dtcBJNmgbmCt/Companies/"
+        contacts_url = "https://api.airtable.com/v0/appq6dtcBJNmgbmCt/Contacts/"
+
+        # Gets the company name by filtering for the alerted node listed with the company from airtable.
+        companies_url = companies_url + f'?filterByFormula=%7BSteward Nodes%7D="{node_name}"'
+        item = "Company Name"
+        company_name = get_records(companies_url, headers, item)
+        
+        # Filters and gets the technical contacts associated with the company from airtable.
+        contacts_url = contacts_url + f'?filterByFormula=AND(Company="{company_name}", SEARCH("Technical",%7BContact Type copy%7D))'
+        item = "Email"
+        Email = get_records(contacts_url, headers, item)
+
+        """
         AIRTABLE_API_KEY = os.environ.get('Airtable_API_Key')
         headers = {"Authorization": "Bearer " + AIRTABLE_API_KEY}
 
@@ -173,21 +196,18 @@ class main(plugin_collection.Plugin):
         response = requests.get(companies_url, headers=headers)
         airtable_response = response.json()
         # print(json.dumps(airtable_response, indent=2))
-        airtable_records = airtable_response["records"]
-        for record in airtable_records:
-            if "Company Name" in record["fields"]:
-                company_name = record["fields"]["Company Name"]
-                # print(company_name)
+        airtable_records = airtable_response["records"][0]
+        company_name = airtable_records["fields"].get("Company Name")
+        # print(company_name)
         
         # Filters and gets the technical contacts associated with the company from airtable.
         contacts_url = contacts_url + f'?filterByFormula=AND(Company="{company_name}", SEARCH("Technical",%7BContact Type copy%7D))'
         response = requests.get(contacts_url, headers=headers)
         airtable_response = response.json()
         # print(json.dumps(airtable_response, indent=2))
-        airtable_records = airtable_response["records"]
-        for record in airtable_records:
-            if "Email" in record["fields"]: Email = record["fields"]["Email"]
-            # print(f"Email: {Email}\n")
+        airtable_records = airtable_response["records"][0]
+        Email = airtable_records["fields"].get("Email")
+        # print(f"Email: {Email}\n") """
 
         return(Email)
 
@@ -200,9 +220,12 @@ class main(plugin_collection.Plugin):
 
         alert = {
             "node": node,
-            "stageOne": {"time_sent": None, "time_till_email": 120, "HTML_content": email_content_path + "StageOneEmail.html", "plainText_content": email_content_path + "StageOneEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email},
-            "stageTwo": {"time_sent": None, "time_till_email": 1440, "HTML_content": email_content_path + "StageTwoEmail.html", "plainText_content": email_content_path + "StageTwoEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email},
-            "stageThree": {"time_sent": None, "time_till_email": 2880, "HTML_content": email_content_path + "StageThreeEmail.html", "plainText_content": email_content_path + "StageThreeEmail.txt", "recipients_email": recipients_email, 'cc_email': cc_email}
+            "contactInfo": {"recipients_email": recipients_email, 'cc_email': cc_email},
+            "notify": {
+                "1": {"time_sent": None, "time_till_email": 120, "HTML_content": email_content_path + "StageOneEmail.html", "plainText_content": email_content_path + "StageOneEmail.txt"},
+                "2": {"time_sent": None, "time_till_email": 1440, "HTML_content": email_content_path + "StageTwoEmail.html", "plainText_content": email_content_path + "StageTwoEmail.txt"},
+                "3": {"time_sent": None, "time_till_email": 2880, "HTML_content": email_content_path + "StageThreeEmail.html", "plainText_content": email_content_path + "StageThreeEmail.txt"}
+            }
         }
 
         # Create Alert file with dict above.
