@@ -42,6 +42,12 @@ class Plugin(object):
         self.description = 'UNKNOWN'
         self.type = 'UNKNOWN'
 
+    def parse_args(self, argument):
+        raise NotImplementedError
+
+    def load_parse_args(self, argument):
+        raise NotImplementedError
+
     def perform_operation(self, argument):
         """The method that we expect all plugins to implement. This is the
         method that our framework will call
@@ -79,10 +85,13 @@ class PluginCollection(object):
         print(f'Looking for plugins under package {self.plugin_package}')
         self.walk_package(self.plugin_package)
 
-    def load_parse_args(self, parser):
+    def get_parse_args(self, parser):
         for plugin in self.plugins:
             plugin.parse_args(parser)
-            
+
+    def load_all_parse_args(self, args):
+        for plugin in self.plugins:
+            plugin.load_parse_args(args)
 
     def apply_all_plugins_on_value(self, result, network_name):
         """Apply all of the plugins with the argument supplied to this function

@@ -13,8 +13,11 @@ class main(plugin_collection.Plugin):
 
     def parse_args(self, parser, argv=None, status_only: bool = False):
         parser.add_argument("--status", action="store_true", help="Get status only.  Suppresses detailed results.")
-        args, unknown = parser.parse_known_args(argv)
 
+    def load_parse_args(self, args):
+        global verbose
+        verbose = args.verbose
+        
         self.status_only = args.status
     
     def perform_operation(self, result, network_name):

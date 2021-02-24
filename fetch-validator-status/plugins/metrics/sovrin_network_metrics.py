@@ -23,8 +23,10 @@ class main(plugin_collection.Plugin):
         parser.add_argument("--json", default=os.environ.get('JSON') , help="Google API Credentials json file name (file must be in root folder). Can be specified using the 'JSON' environment variable.", nargs='*')
         parser.add_argument("--file", default=os.environ.get('FILE') , help="Specify which google sheets file you want to log too. Can be specified using the 'FILE' environment variable.", nargs='*')
         parser.add_argument("--worksheet", default=os.environ.get('WORKSHEET') , help="Specify which worksheet you want to log too. Can be specified using the 'WORKSHEET' environment variable.", nargs='*')
-        args, unknown = parser.parse_known_args(argv)
-        
+
+    def load_parse_args(self, args):
+        global verbose
+        verbose = args.verbose
         # Support names and paths containing spaces.
         # Other workarounds including the standard of putting '"'s around values containing spaces does not always work.
         if args.json:

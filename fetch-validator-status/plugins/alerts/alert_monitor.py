@@ -20,11 +20,12 @@ class main(plugin_collection.Plugin):
     # def description(self)
     #     return self.description
 
-
     def parse_args(self, parser, argv=None):
         parser.add_argument("--alerts", action="store_true", help="Filter results based on alerts.  Only return data for nodes containing detected 'info', 'warnings', or 'errors'.")
 
-        args, unknown = parser.parse_known_args(argv)
+    def load_parse_args(self, args):
+        global verbose
+        verbose = args.verbose
 
         if args.alerts:
             self.alerts_only = args.alerts

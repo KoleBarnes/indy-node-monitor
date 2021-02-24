@@ -21,7 +21,6 @@ from indy_vdr.pool import open_pool
 from plugin_collection import PluginCollection
 import time
 
-global verbose
 verbose = False
 
 
@@ -53,7 +52,7 @@ def seed_as_bytes(seed):
 async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = None, network_name: str = None):
 
     result = [{'name': 'Medici', 'client-address': 'tcp://35.225.188.183:9702', 'node-address': 'tcp://34.66.79.136:9701', 'status': {'ok': False, 'timestamp': '1612731833', 'errors': 1}, 'errors': ['timeout']},{'name': 'mitrecorp', 'client-address': 'tcp://52.207.178.56:9779', 'node-address': 'tcp://54.144.209.223:9797', 'status': {'ok': False, 'timestamp': '1612731833', 'errors': 1}, 'errors': ['timeout']}]
-    my_plugins.apply_all_plugins_on_value(result, network_name)
+    monitor_plugins.apply_all_plugins_on_value(result, network_name)
     exit()
 
     # Start of engine
@@ -135,7 +134,7 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
     # Connection Issues
     await detect_connection_issues(result)
 
-    my_plugins.apply_all_plugins_on_value(result, network_name)
+    monitor_plugins.apply_all_plugins_on_value(result, network_name)
     
 # ansys plug-in
 async def get_node_addresses(entry: any, verifiers: any) -> any:
@@ -339,11 +338,9 @@ def list_networks():
     return networks.keys()
 
 if __name__ == "__main__":
-    my_plugins = PluginCollection('plugins')
-
-    #my_plugins.plugin_list()
-    my_plugins.sort()
-    my_plugins.plugin_list()
+    monitor_plugins = PluginCollection('plugins')
+    monitor_plugins.sort()
+    monitor_plugins.plugin_list()
 
     parser = argparse.ArgumentParser(description="Fetch the status of all the indy-nodes within a given pool.")
     parser.add_argument("--net", choices=list_networks(), help="Connect to a known network using an ID.")
@@ -352,14 +349,14 @@ if __name__ == "__main__":
     parser.add_argument("--genesis-path", default=os.getenv("GENESIS_PATH") or f"{get_script_dir()}/genesis.txn" , help="The path to the genesis file describing the ledger pool.  Can be specified using the 'GENESIS_PATH' environment variable.")
     parser.add_argument("-s", "--seed", default=os.environ.get('SEED') , help="The privileged DID seed to use for the ledger requests.  Can be specified using the 'SEED' environment variable.")
     parser.add_argument("-a", "--anonymous", action="store_true", help="Perform requests anonymously, without requiring privileged DID seed.")
-    
     parser.add_argument("--nodes", help="The comma delimited list of the nodes from which to collect the status.  The default is all of the nodes in the pool.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging.")
-    
+    # Get parse args from the plug-ins
+    monitor_plugins.get_parse_args(parser)
     args, unknown = parser.parse_known_args()
 
-    my_plugins.load_parse_args(parser)
-
+    # Send known args to the plugins
+    monitor_plugins.load_all_parse_args(args)
 
     verbose = args.verbose
 
