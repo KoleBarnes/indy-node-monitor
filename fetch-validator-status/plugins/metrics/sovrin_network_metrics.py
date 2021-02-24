@@ -11,7 +11,7 @@ class main(plugin_collection.Plugin):
         self.index = 1
         self.name = 'Sovrin Network Metrics Function'
         self.description = ''
-        self.type = '' # enum type
+        self.type = ''
         self.mlog = mlog
         self.gauth_json = gauth_json
         self.file_name = file_name
@@ -74,6 +74,3 @@ class main(plugin_collection.Plugin):
             print(row)
             # gspread_append_sheet(authD_client, self.file_name, self.worksheet_name, row)
             print(f"\033[1;92;40mPosted to {self.file_name} in sheet {self.worksheet_name}.\033[m")
-
-        # else:
-        #     print(self.description, 'not used skipping.')
