@@ -48,8 +48,7 @@ class main(plugin_collection.Plugin):
                     - class discription
                     - enum type
                     - if index = -1 don't run plug-in
-                    - put network name in alerts json file
-                    - build dict with airtable data
+                    - finish building dict with airtable data
                     - check for none in recipiets email and send an email to support about it.
                     - use time till email to sort the steps, then
                       go throught the steps to see when and if an email is to be sent.
@@ -58,11 +57,16 @@ class main(plugin_collection.Plugin):
                     node_name = node["name"]
                     alert_log_path = "./plugins/alerts/AlertLogs/"
 
+                    # self.get_contact_info(node_name)
+                    # exit()
+
                     if os.path.exists(f'{alert_log_path}{node_name}.json'):
                         self.read_alert_log(node_name, alert_log_path, network_name)
                     else:
                         recipients_email = self.get_contact_info(node_name)
-                        self.create_alert_log(node, node_name, alert_log_path, recipients_email)
+                        self.create_alert_log(node, node_name, network_name, alert_log_path, recipients_email)
+                        self.read_alert_log(node_name, alert_log_path, network_name)
+
                         
     def get_contact_info(self, node_name):
         AIRTABLE_API_KEY = os.environ.get('Airtable_API_Key')
@@ -72,33 +76,53 @@ class main(plugin_collection.Plugin):
 
         # Gets the company name by filtering for the alerted node listed with the company from airtable.
         companies_url = companies_url + f'?filterByFormula=%7BSteward Nodes%7D="{node_name}"'
-        item = "Company Name"
-        company_name = self.get_records(companies_url, headers, item)
+        listOfItems = ["Company Name"]
+        company_name = self.get_records(companies_url, headers, listOfItems)
         
+        name = company_name["Company Name"]
+        contact_type = "Technical"
+
         # Filters and gets the technical contacts associated with the company from airtable.
-        contacts_url = contacts_url + f'?filterByFormula=AND(Company="{company_name}", SEARCH("Technical",%7BContact Type copy%7D))'
-        item = "Email"
-        Email = self.get_records(contacts_url, headers, item)
+        contacts_url = contacts_url + f'?filterByFormula=AND(Company="{name}", SEARCH("{contact_type}",%7BContact Type copy%7D))'
+        listOfItems = ["First Name","Last Name","Email"]
+        contacts = self.get_records(contacts_url, headers, listOfItems)
 
-        return(Email)
+        contacts.update(company_name)
 
-    def get_records(self, url, headers, item):
+        # print(json.dumps(contacts, indent=2))
+
+        return(contacts)
+
+    def get_records(self, url, headers, listOfItems):
+        things = {}
+
         response = requests.get(url, headers=headers)
         airtable_response = response.json()
         # print(json.dumps(airtable_response, indent=2))
-        airtable_records = airtable_response["records"][0]
-        item = airtable_records["fields"].get(item)
-        print(item)
-        return(item)
+        airtable_records = airtable_response["records"]
+        count = 0
+        # print(len(airtable_records))
+        for record in airtable_records:
+            if len(airtable_records) == 1:
+                for item in listOfItems:
+                    things[item] = record["fields"].get(item)
+            else:
+                count += 1
+                things[count] = {}
+                for item in listOfItems:
+                    things[count][item] = record["fields"].get(item)
+                    # print(record["fields"].get(item))
+        # print(things)
+        return(things)
 
-    def create_alert_log(self, node, node_name, alert_log_path, recipients_email):
-        print('New alert creating log...')
-
+    def create_alert_log(self, node, node_name, network_name, alert_log_path, recipients_email):
+        print('New alert creating log...', end='')
         email_content_path = "./plugins/alerts/EmailContent/"
         recipients_email = [recipients_email]
         cc_email = [os.environ.get('Sovrin_Email_App_User')]
 
         alert = {
+            "network": network_name,
             "node": node,
             "contactInfo": {"recipients_email": recipients_email, 'cc_email': cc_email},
             "notify": {
@@ -111,7 +135,7 @@ class main(plugin_collection.Plugin):
         # Create Alert file with dict above.
         with open(f'{alert_log_path}{node_name}.json', 'w') as outfile:
             json.dump(alert, outfile, indent=2)
-            print('Log created.')
+            print('\033[92mDONE\033[m')
 
     def read_alert_log(self, node_name, alert_log_path, network_name):
         ALL_EMAILS_SENT = False
@@ -154,15 +178,15 @@ class main(plugin_collection.Plugin):
                         data.update(data)
                         json_file.seek(0)
                         json.dump(data, json_file, indent=2)
-                    print(f'{stage} email Sent to {node_name} on network {network_name}!') 
+                    print(f'\033[92mEmail {stage} sent to {node_name} ({network_name})!\033[m') 
 
             # States when the next email will be sent for the next stage.
             elif minutes < time_till_email:
-                email_eta = time_till_email - minutes
-                print(f'{stage} Email will be sent in {email_eta} to {node_name} on network {network_name} if not resolved.')
+                email_eta = round(time_till_email - minutes)
+                print(f'\033[93mEmail {stage} will be sent in \033[4m{email_eta} minutes\033[m\033[93m to {node_name} ({network_name}) if not resolved.\033[m')
 
         else:
-            print(f'All emails have been sent to {node_name}.')
+            print(f'\033[91mAll emails have been sent to {node_name}.\033[m')
 
     def notify(self, node, network_name, recipients_email, cc_email, html_content, plainText_content):
         EMAIL_ADDRESS = os.environ.get('Sovrin_Email_App_User')

@@ -28,6 +28,7 @@ Change History:
 
 import inspect
 import os
+import sys
 import pkgutil
 
 
@@ -66,14 +67,6 @@ class PluginCollection(object):
         """
         self.plugin_package = plugin_package
         self.reload_plugins()
-        
-    def plugin_list(self):
-        for plugin in self.plugins:
-            print(plugin.name)
-        
-    def sort(self):
-        print('Sorting...')
-        self.plugins.sort(key=lambda x: x.index, reverse=False)
 
     def reload_plugins(self):
         """Reset the list of all plugins and initiate the walk over the main
@@ -81,27 +74,41 @@ class PluginCollection(object):
         """
         self.plugins = []
         self.seen_paths = []
-        print()
-        print(f'Looking for plugins under package {self.plugin_package}')
+        # print(f'\nLooking for plugins under package {self.plugin_package}')
         self.walk_package(self.plugin_package)
+
+    def sort(self):
+        self.plugins.sort(key=lambda x: x.index, reverse=False)
 
     def get_parse_args(self, parser):
         for plugin in self.plugins:
             plugin.parse_args(parser)
 
     def load_all_parse_args(self, args):
+        global verbose
+        verbose = args.verbose
         for plugin in self.plugins:
             plugin.load_parse_args(args)
+
+    def log(self, *args):
+        if verbose:
+            plugin_color = "\033[94m"
+            plugin_color_stop = "\033[m"
+            print(plugin_color, *args, plugin_color_stop, file=sys.stderr)
+
+    def plugin_list(self):
+        self.log("--- Loaded Plugins ---")
+        for plugin in self.plugins:
+            self.log(f"{plugin.name}: {plugin.__class__.__module__}.{plugin.__class__.__name__}")
 
     def apply_all_plugins_on_value(self, result, network_name):
         """Apply all of the plugins with the argument supplied to this function
         """
-        print()
-        print(f'Running plugins.\n')
+        self.log(f'Running plugins...\n')
         for plugin in self.plugins:
-            print(f'Running {plugin.name}:')
+            self.log(f'Running {plugin.name}...')
             value = plugin.perform_operation(result, network_name)
-            print((f'    {plugin.name} yields value {value}\n'))
+            self.log((f'{plugin.name} yields value {value}\n'))
 
     def walk_package(self, package):
         """Recursively walk the supplied package to retrieve all plugins
@@ -115,7 +122,7 @@ class PluginCollection(object):
                 for (_, c) in clsmembers:
                     # Only add classes that are a sub class of Plugin, but NOT Plugin itself
                     if issubclass(c, Plugin) & (c is not Plugin):
-                        print(f'    Found plugin class: {c.__module__}.{c.__name__}')
+                        # print(f'    Found plugin class: {c.__module__}.{c.__name__}')
                         self.plugins.append(c())
 
 

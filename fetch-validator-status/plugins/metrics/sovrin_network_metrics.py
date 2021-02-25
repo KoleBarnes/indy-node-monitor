@@ -9,7 +9,7 @@ class main(plugin_collection.Plugin):
     def __init__(self, mlog=None, gauth_json=None, file_name=None, worksheet_name=None):
         super().__init__()
         self.index = 1
-        self.name = 'Sovrin Network Metrics Function'
+        self.name = 'Sovrin Network Metrics'
         self.description = ''
         self.type = ''
         self.mlog = mlog
@@ -73,4 +73,4 @@ class main(plugin_collection.Plugin):
             row = [time, network_name, num_of_nodes, nodes_offline, networkResilience, active_nodes, message]
             print(row)
             # gspread_append_sheet(authD_client, self.file_name, self.worksheet_name, row)
-            print(f"\033[1;92;40mPosted to {self.file_name} in sheet {self.worksheet_name}.\033[m")
+            print(f"\033[92mPosted to {self.file_name} in sheet {self.worksheet_name}.\033[m")
