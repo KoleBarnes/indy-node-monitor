@@ -62,9 +62,9 @@ class main(plugin_collection.Plugin):
                                 logging.error(e)
                                 print("\033[91mError occurred while getting info from Airtable. Check debug log!\033[m")
                                 EMAIL_ADDRESS = os.environ.get('Sovrin_Email_App_User')
-                                plainText_content = "./plugins/alerts/EmailContent/ErrorAlert.txt"
                                 subject = "Error occurred in Alerts in Node Monitor"
-                                self.send_email(node_name, network_name, plainText_content, cc_email=EMAIL_ADDRESS, subject=subject)
+                                content = open('./plugins/alerts/EmailContent/ErrorAlert.txt').read()
+                                self.send_email(subject, content, node_name, network_name, cc_email=EMAIL_ADDRESS)
                             else:
                                 self.create_alert_log(node, node_name, network_name, alert_log_path, recipients_email)
                                 self.read_alert_log(node_name, alert_log_path, network_name)
@@ -172,8 +172,20 @@ class main(plugin_collection.Plugin):
             # Find out if it is time to send an email based on time from the stage the alert is in. 
             # 1: 2 hours/120 minutes. 2: 24 hours/1440 minutes. 3: 48 Hours/2880 minutes.
             if minutes >= time_till_email:
-                # Send email
-                email_sent = self.send_email(node_name, network_name, plainText_content, recipients_email=recipients_email, cc_email=cc_email)
+                # Build email
+                
+                # Find out what network we are on and find which folder the log will be in.
+                if network_name == 'Sovrin Main Net':
+                    log_folder = 'live'
+                elif network_name == 'Sovrin Staging Net':
+                    log_folder = 'sandbox'
+                elif network_name == 'Sovrin Builder Net':
+                    log_folder = 'net3'
+                subject = f'Your node ({node_name}) on the {network_name} needs attention'
+                content = open(plainText_content).read().format(node=node_name, network_name=network_name, log_folder=log_folder, recipients_email=recipients_email)
+
+                # Send Email
+                email_sent = self.send_email(subject, content, node_name, network_name, recipients_email=recipients_email, cc_email=cc_email)
                 if email_sent:
                     # Open and update the alert with the time the email was sent.
                     data["notify"][stage]["time_sent"] = str(datetime.datetime.now().strftime('%s'))
@@ -191,30 +203,18 @@ class main(plugin_collection.Plugin):
         else:
             print(f'\033[91mAll emails have been sent to {node_name}.\033[m')
 
-    def send_email(self, node_name, network_name, plainText_content, subject = None, recipients_email: str = None, cc_email: str = None,):
+    def send_email(self, subject, content, node_name, network_name, recipients_email: str = None, cc_email: str = None):
         EMAIL_ADDRESS = os.environ.get('Sovrin_Email_App_User')
         EMAIL_PASSWORD = os.environ.get('Sorvin_Email_App_Pwd')
         EMAIL_RECIPIENT = None
         EMAIL_CC = cc_email
 
-        # Find out what network we are on and find which folder the log will be in.
-        if network_name == 'Sovrin Main Net':
-            log_folder = 'live'
-        elif network_name == 'Sovrin Staging Net':
-            log_folder = 'sandbox'
-        elif network_name == 'Sovrin Builder Net':
-            log_folder = 'net3'
-
         msg = EmailMessage()
-        if subject:
-            msg['Subject'] = subject
-        else:
-            msg['Subject'] = f'Your node ({node_name}) on the {network_name} needs attention'
+        msg['Subject'] = subject
         msg['From'] = EMAIL_ADDRESS
         msg['To'] = EMAIL_RECIPIENT
         msg['Cc'] = EMAIL_CC
 
-        content = open(plainText_content).read().format(node=node_name, network_name=network_name, log_folder=log_folder, recipients_email=recipients_email)
         msg.set_content(content)
 
         # Send Email with contents and return if the email was sent.
