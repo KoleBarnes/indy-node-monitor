@@ -130,9 +130,9 @@ class main(plugin_collection.Plugin):
             "node": node,
             "contactInfo": {"recipients_email": recipients_email, 'cc_email': cc_email},
             "notify": {
-                "1": {"time_sent": None, "time_till_email": 120, "HTML_content": email_content_path + "StageOneEmail.html", "plainText_content": email_content_path + "StageOneEmail.txt"},
-                "2": {"time_sent": None, "time_till_email": 1440, "HTML_content": email_content_path + "StageTwoEmail.html", "plainText_content": email_content_path + "StageTwoEmail.txt"},
-                "3": {"time_sent": None, "time_till_email": 2880, "HTML_content": email_content_path + "StageThreeEmail.html", "plainText_content": email_content_path + "StageThreeEmail.txt"}
+                "1": {"time_sent": None, "time_till_email": 120, "plainText_content": email_content_path + "StageOneEmail.txt"},
+                "2": {"time_sent": None, "time_till_email": 1440, "plainText_content": email_content_path + "StageTwoEmail.txt"},
+                "3": {"time_sent": None, "time_till_email": 2880, "plainText_content": email_content_path + "StageThreeEmail.txt"}
             }
         }
 
@@ -156,7 +156,6 @@ class main(plugin_collection.Plugin):
                 recipients_email = data["contactInfo"].get("recipients_email")
                 cc_email = data["contactInfo"].get("cc_email")
                 time_till_email = data["notify"][stage].get("time_till_email")
-                html_content = data["notify"][stage].get("HTML_content")
                 plainText_content = data["notify"][stage].get("plainText_content")
                 break
         # If all emails have been sent; stop. 
@@ -174,7 +173,7 @@ class main(plugin_collection.Plugin):
             # 1: 2 hours/120 minutes. 2: 24 hours/1440 minutes. 3: 48 Hours/2880 minutes.
             if minutes >= time_till_email:
                 # Send email
-                email_sent = self.send_email(node_name, network_name, plainText_content, recipients_email=recipients_email, cc_email=cc_email, html_content=html_content)
+                email_sent = self.send_email(node_name, network_name, plainText_content, recipients_email=recipients_email, cc_email=cc_email)
                 if email_sent:
                     # Open and update the alert with the time the email was sent.
                     data["notify"][stage]["time_sent"] = str(datetime.datetime.now().strftime('%s'))
@@ -192,7 +191,7 @@ class main(plugin_collection.Plugin):
         else:
             print(f'\033[91mAll emails have been sent to {node_name}.\033[m')
 
-    def send_email(self, node_name, network_name, plainText_content, subject = None, recipients_email: str = None, cc_email: str = None, html_content: str = None):
+    def send_email(self, node_name, network_name, plainText_content, subject = None, recipients_email: str = None, cc_email: str = None,):
         EMAIL_ADDRESS = os.environ.get('Sovrin_Email_App_User')
         EMAIL_PASSWORD = os.environ.get('Sorvin_Email_App_Pwd')
         EMAIL_RECIPIENT = None
@@ -215,16 +214,8 @@ class main(plugin_collection.Plugin):
         msg['To'] = EMAIL_RECIPIENT
         msg['Cc'] = EMAIL_CC
 
-        # Email will send a HTML and plain text options for email clients that don't support HTML format.
-
-        # Plain Text Option #
         content = open(plainText_content).read().format(node=node_name, network_name=network_name, log_folder=log_folder, recipients_email=recipients_email)
         msg.set_content(content)
-
-        # HTML Option #
-        # if html_content:
-        #     html = open(html_content).read().format(node=node_name, network_name=network_name, log_folder=log_folder, recipients_email=recipients_email)
-        #     msg.add_alternative(html, subtype='html')
 
         # Send Email with contents and return if the email was sent.
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
@@ -233,4 +224,3 @@ class main(plugin_collection.Plugin):
             email_sent = True
         
         return email_sent
-
