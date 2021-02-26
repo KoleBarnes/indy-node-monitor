@@ -92,9 +92,7 @@ class PluginCollection(object):
 
     def log(self, *args):
         if verbose:
-            plugin_color = "\033[94m"
-            plugin_color_stop = "\033[m"
-            print(plugin_color, *args, plugin_color_stop, file=sys.stderr)
+            print(*args, file=sys.stderr)
 
     def plugin_list(self):
         self.log("--- Loaded Plugins ---")
