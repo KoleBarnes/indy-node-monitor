@@ -57,63 +57,64 @@ class main(plugin_collection.Plugin):
                     node_name = node["name"]
                     alert_log_path = "./plugins/alerts/AlertLogs/"
 
-                    # self.get_contact_info(node_name)
-                    # exit()
+                    self.get_contact_info(node_name)
+                    exit()
 
                     if os.path.exists(f'{alert_log_path}{node_name}.json'):
                         self.read_alert_log(node_name, alert_log_path, network_name)
                     else:
                         recipients_email = self.get_contact_info(node_name)
                         self.create_alert_log(node, node_name, network_name, alert_log_path, recipients_email)
-                        self.read_alert_log(node_name, alert_log_path, network_name)
+                        # self.read_alert_log(node_name, alert_log_path, network_name)
 
                         
     def get_contact_info(self, node_name):
+        EMAIL_ADDRESS = os.environ.get('Sovrin_Email_App_User')
         AIRTABLE_API_KEY = os.environ.get('Airtable_API_Key')
         headers = {"Authorization": "Bearer " + AIRTABLE_API_KEY}
         companies_url = "https://api.airtable.com/v0/appq6dtcBJNmgbmCt/Companies/"
         contacts_url = "https://api.airtable.com/v0/appq6dtcBJNmgbmCt/Contacts/"
+        CONTACT_TYPE = "Technical"
 
         # Gets the company name by filtering for the alerted node listed with the company from airtable.
-        companies_url = companies_url + f'?filterByFormula=%7BSteward Nodes%7D="{node_name}"'
-        listOfItems = ["Company Name"]
-        company_name = self.get_records(companies_url, headers, listOfItems)
-        
-        name = company_name["Company Name"]
-        contact_type = "Technical"
+        companies_url = companies_url + f'?filterByFormula=SEARCH("{node_name}",%7BSteward Nodes%7D)'
+        company_records = self.get_records(companies_url, headers)
+
+        company_name = None
+        for record in company_records["records"]:
+            company_name = record["fields"].get("Company Name")
+            if not company_name:
+                print("Could not get company name!")
 
         # Filters and gets the technical contacts associated with the company from airtable.
-        contacts_url = contacts_url + f'?filterByFormula=AND(Company="{name}", SEARCH("{contact_type}",%7BContact Type copy%7D))'
-        listOfItems = ["First Name","Last Name","Email"]
-        contacts = self.get_records(contacts_url, headers, listOfItems)
+        contacts_url = contacts_url + f'?filterByFormula=AND(Company="{company_name}", SEARCH("{CONTACT_TYPE}",%7BContact Type%7D))'
+        contact_records = self.get_records(contacts_url, headers)
 
-        contacts.update(company_name)
+        contacts_email = []
+        for record in contact_records["records"]:
+            contacts_email.append(record["fields"].get("Email"))
 
-        # print(json.dumps(contacts, indent=2))
+        if not contacts_email:
+            print(f'No "{CONTACT_TYPE}" records found.')
+            contacts_email = {"Email": EMAIL_ADDRESS}
+            print(f"Email: {contacts_email}\n")
+        else:
+            contacts = {
+                "Company Name": company_name,
+                "Email": contacts_email
+            }
+            print(json.dumps(contacts, indent=2))
 
         return(contacts)
 
-    def get_records(self, url, headers, listOfItems):
-        things = {}
-
+    def get_records(self, url, headers):
         response = requests.get(url, headers=headers)
         airtable_response = response.json()
         # print(json.dumps(airtable_response, indent=2))
-        airtable_records = airtable_response["records"]
-        count = 0
-        # print(len(airtable_records))
-        for record in airtable_records:
-            if len(airtable_records) == 1:
-                for item in listOfItems:
-                    things[item] = record["fields"].get(item)
-            else:
-                count += 1
-                things[count] = {}
-                for item in listOfItems:
-                    things[count][item] = record["fields"].get(item)
-                    # print(record["fields"].get(item))
-        # print(things)
-        return(things)
+        has_items = bool(airtable_response["records"])
+        if not has_items:
+            print("Airtable responded with empty response!")
+        return(airtable_response)
 
     def create_alert_log(self, node, node_name, network_name, alert_log_path, recipients_email):
         print('New alert creating log...', end='')
