@@ -9,63 +9,59 @@ import requests
 
 class main(plugin_collection.Plugin):
     
-    def __init__(self,  alerts_only = None):
+    def __init__(self,  alerts = None, notify = None):
         super().__init__()
         self.index = 2
         self.name = 'Alerts'
         self.description = ''
         self.type = ''
-        self.alerts_only = alerts_only
+        self.alerts = alerts
+        self.notify = notify
 
     # def description(self)
     #     return self.description
 
     def parse_args(self, parser, argv=None):
         parser.add_argument("--alerts", action="store_true", help="Filter results based on alerts.  Only return data for nodes containing detected 'info', 'warnings', or 'errors'.")
+        parser.add_argument("--notify", action="store_true", help="Send email notifications of alerts.")
 
     def load_parse_args(self, args):
         global verbose
         verbose = args.verbose
 
         if args.alerts:
-            self.alerts_only = args.alerts
+            self.alerts = args.alerts
+
+        if args.notify:
+            self.notify = args.notify
 
     def perform_operation(self, result, network_name):
         # Filter on alerts
-        if self.alerts_only:
+        if self.alerts:
             filtered_result = []
             for item in result:
                 if ("info" in item["status"]) or ("warnings" in  item["status"]) or ("errors" in  item["status"]):
                     filtered_result.append(item)
             result = filtered_result
-            # print(json.dumps(result, indent=2))
+            
+            if result:
+                if self.notify: 
+                    for node in result:
+                        node_name = node["name"]
+                        alert_log_path = "./plugins/alerts/AlertLogs/"
 
-            if result: 
-                for node in result:
+                        # self.get_contact_info(node_name)
+                        # exit()
 
-                    ''' 
-                    - Archive alert files when there aren't alerts/alerts have been resolved
-                    - class discription
-                    - enum type
-                    - if index = -1 don't run plug-in
-                    - finish building dict with airtable data
-                    - check for none in recipiets email and send an email to support about it.
-                    - use time till email to sort the steps, then
-                      go throught the steps to see when and if an email is to be sent.
-                    '''
-
-                    node_name = node["name"]
-                    alert_log_path = "./plugins/alerts/AlertLogs/"
-
-                    self.get_contact_info(node_name)
-                    exit()
-
-                    if os.path.exists(f'{alert_log_path}{node_name}.json'):
-                        self.read_alert_log(node_name, alert_log_path, network_name)
-                    else:
-                        recipients_email = self.get_contact_info(node_name)
-                        self.create_alert_log(node, node_name, network_name, alert_log_path, recipients_email)
-                        # self.read_alert_log(node_name, alert_log_path, network_name)
+                        if os.path.exists(f'{alert_log_path}{node_name}.json'):
+                            self.read_alert_log(node_name, alert_log_path, network_name)
+                        else:
+                            recipients_email = self.get_contact_info(node_name)
+                            self.create_alert_log(node, node_name, network_name, alert_log_path, recipients_email)
+                            # self.read_alert_log(node_name, alert_log_path, network_name)
+                
+                else:
+                    print(json.dumps(result, indent=2))
 
                         
     def get_contact_info(self, node_name):
@@ -103,7 +99,7 @@ class main(plugin_collection.Plugin):
                 "Company Name": company_name,
                 "Email": contacts_email
             }
-            print(json.dumps(contacts, indent=2))
+            # print(json.dumps(contacts, indent=2))
 
         return(contacts)
 
@@ -171,7 +167,7 @@ class main(plugin_collection.Plugin):
             # 1: 2 hours/120 minutes. 2: 24 hours/1440 minutes. 3: 48 Hours/2880 minutes.
             if minutes >= time_till_email:
                 # Send email
-                email_sent = self.notify(node_name, network_name, recipients_email, cc_email, html_content, plainText_content)
+                email_sent = self.send_email(node_name, network_name, recipients_email, cc_email, html_content, plainText_content)
                 if email_sent:
                     # Open and update the alert with the time the email was sent.
                     data["notify"][stage]["time_sent"] = str(datetime.datetime.now().strftime('%s'))
@@ -189,7 +185,7 @@ class main(plugin_collection.Plugin):
         else:
             print(f'\033[91mAll emails have been sent to {node_name}.\033[m')
 
-    def notify(self, node, network_name, recipients_email, cc_email, html_content, plainText_content):
+    def send_email(self, node, network_name, recipients_email, cc_email, html_content, plainText_content):
         EMAIL_ADDRESS = os.environ.get('Sovrin_Email_App_User')
         EMAIL_PASSWORD = os.environ.get('Sorvin_Email_App_Pwd')
         EMAIL_RECIPIENT = None
