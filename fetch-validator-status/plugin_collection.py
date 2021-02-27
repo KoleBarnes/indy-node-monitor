@@ -67,6 +67,7 @@ class PluginCollection(object):
         """
         self.plugin_package = plugin_package
         self.reload_plugins()
+        self.sort()
 
     def reload_plugins(self):
         """Reset the list of all plugins and initiate the walk over the main
@@ -76,28 +77,6 @@ class PluginCollection(object):
         self.seen_paths = []
         # print(f'\nLooking for plugins under package {self.plugin_package}')
         self.walk_package(self.plugin_package)
-
-    def sort(self):
-        self.plugins.sort(key=lambda x: x.index, reverse=False)
-
-    def get_parse_args(self, parser):
-        for plugin in self.plugins:
-            plugin.parse_args(parser)
-
-    def load_all_parse_args(self, args):
-        global verbose
-        verbose = args.verbose
-        for plugin in self.plugins:
-            plugin.load_parse_args(args)
-
-    def log(self, *args):
-        if verbose:
-            print(*args, file=sys.stderr)
-
-    def plugin_list(self):
-        self.log("--- Loaded Plugins ---")
-        for plugin in self.plugins:
-            self.log(f"{plugin.name}: {plugin.__class__.__module__}.{plugin.__class__.__name__}")
 
     def apply_all_plugins_on_value(self, result, network_name):
         """Apply all of the plugins with the argument supplied to this function
@@ -142,3 +121,25 @@ class PluginCollection(object):
                 # For each sub directory, apply the walk_package method recursively
                 for child_pkg in child_pkgs:
                     self.walk_package(package + '.' + child_pkg)
+
+    def sort(self):
+        self.plugins.sort(key=lambda x: x.index, reverse=False)
+
+    def get_parse_args(self, parser):
+        for plugin in self.plugins:
+            plugin.parse_args(parser)
+
+    def load_all_parse_args(self, args):
+        global verbose
+        verbose = args.verbose
+        for plugin in self.plugins:
+            plugin.load_parse_args(args)
+
+    def log(self, *args):
+        if verbose:
+            print(*args, file=sys.stderr)
+
+    def plugin_list(self):
+        self.log("--- Loaded Plugins ---")
+        for plugin in self.plugins:
+            self.log(f"{plugin.name}: {plugin.__class__.__module__}.{plugin.__class__.__name__}")

@@ -169,18 +169,16 @@ class main(plugin_collection.Plugin):
             total_seconds = time_delta.total_seconds()
             minutes = total_seconds/60
 
-            # Find out if it is time to send an email based on time from the stage the alert is in. 
+            # Find out if it is time to send an email based on the time from the stage the alert is in. 
             # 1: 2 hours/120 minutes. 2: 24 hours/1440 minutes. 3: 48 Hours/2880 minutes.
             if minutes >= time_till_email:
                 # Build email
                 
                 # Find out what network we are on and find which folder the log will be in.
-                if network_name == 'Sovrin Main Net':
-                    log_folder = 'live'
-                elif network_name == 'Sovrin Staging Net':
-                    log_folder = 'sandbox'
-                elif network_name == 'Sovrin Builder Net':
-                    log_folder = 'net3'
+                if network_name == 'Sovrin Main Net': log_folder = 'live'
+                elif network_name == 'Sovrin Staging Net': log_folder = 'sandbox'
+                elif network_name == 'Sovrin Builder Net': log_folder = 'net3'
+
                 subject = f'Your node ({node_name}) on the {network_name} needs attention'
                 content = open(plainText_content).read().format(node=node_name, network_name=network_name, log_folder=log_folder, recipients_email=recipients_email)
 
@@ -207,13 +205,12 @@ class main(plugin_collection.Plugin):
         EMAIL_ADDRESS = os.environ.get('Sovrin_Email_App_User')
         EMAIL_PASSWORD = os.environ.get('Sorvin_Email_App_Pwd')
         EMAIL_RECIPIENT = None
-        EMAIL_CC = cc_email
 
         msg = EmailMessage()
         msg['Subject'] = subject
         msg['From'] = EMAIL_ADDRESS
         msg['To'] = EMAIL_RECIPIENT
-        msg['Cc'] = EMAIL_CC
+        msg['Cc'] = cc_email
 
         msg.set_content(content)
 

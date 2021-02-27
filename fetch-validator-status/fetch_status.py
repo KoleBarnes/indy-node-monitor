@@ -340,7 +340,6 @@ def list_networks():
 
 if __name__ == "__main__":
     monitor_plugins = PluginCollection('plugins')
-    monitor_plugins.sort()
 
     parser = argparse.ArgumentParser(description="Fetch the status of all the indy-nodes within a given pool.")
     parser.add_argument("--net", choices=list_networks(), help="Connect to a known network using an ID.")
