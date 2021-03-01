@@ -358,8 +358,6 @@ if __name__ == "__main__":
 
     monitor_plugins.load_all_parse_args(args)
 
-    if verbose: monitor_plugins.plugin_list()
-
     if args.list_nets:
         print(json.dumps(load_network_list(), indent=2))
         exit()

@@ -132,6 +132,7 @@ class PluginCollection(object):
     def load_all_parse_args(self, args):
         global verbose
         verbose = args.verbose
+        if verbose: self.plugin_list()
         for plugin in self.plugins:
             plugin.load_parse_args(args)
 
