@@ -1,5 +1,5 @@
 import plugin_collection
-#from .google_sheets import gspread_authZ, gspread_append_sheet
+from .google_sheets import gspread_authZ, gspread_append_sheet
 import datetime
 import argparse
 import os
@@ -50,8 +50,7 @@ class main(plugin_collection.Plugin):
     def perform_operation(self, result, network_name):
 
         if self.mlog:
-            
-            #authD_client = gspread_authZ(self.gauth_json)
+            authD_client = gspread_authZ(self.gauth_json)
             message = ""
             num_of_nodes = 0
             nodes_offline = 0
@@ -72,5 +71,5 @@ class main(plugin_collection.Plugin):
 
             row = [time, network_name, num_of_nodes, nodes_offline, networkResilience, active_nodes, message]
             print(row)
-            # gspread_append_sheet(authD_client, self.file_name, self.worksheet_name, row)
+            gspread_append_sheet(authD_client, self.file_name, self.worksheet_name, row)
             print(f"\033[92mPosted to {self.file_name} in sheet {self.worksheet_name}.\033[m")
