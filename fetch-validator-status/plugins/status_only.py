@@ -11,7 +11,7 @@ class main(plugin_collection.Plugin):
         self.type = ''
         self.status_only = status_only
 
-    def parse_args(self, parser, argv=None, status_only: bool = False):
+    def parse_args(self, parser, argv=None):
         parser.add_argument("--status", action="store_true", help="Get status only.  Suppresses detailed results.")
 
     def load_parse_args(self, args):
