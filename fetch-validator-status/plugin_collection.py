@@ -102,7 +102,6 @@ class PluginCollection(object):
                     if issubclass(c, Plugin) & (c is not Plugin):
                         # print(f'    Found plugin class: {c.__module__}.{c.__name__}')
                         if c().index == -1:
-                            print(c())
                             self.disabled_plugins.append(c())
                         else:
                             self.plugins.append(c())
