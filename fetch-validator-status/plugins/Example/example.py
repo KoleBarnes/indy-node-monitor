@@ -12,7 +12,7 @@ class main(plugin_collection.Plugin):
     def __init__(self, example: bool = False):
         # Below is required in order to diferecate between plug-ins 
         super().__init__()
-        self.index = 4
+        self.index = -1 # Set to -1 to disable plug-in.
         self.name = 'Example Plug-in'
         self.description = ''
         self.type = ''

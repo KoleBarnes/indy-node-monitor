@@ -8,7 +8,7 @@ class main(plugin_collection.Plugin):
     
     def __init__(self, mlog=None, gauth_json=None, file_name=None, worksheet_name=None):
         super().__init__()
-        self.index = 1
+        self.index = 1 # Set to -1 to disable plug-in.
         self.name = 'Sovrin Network Metrics'
         self.description = ''
         self.type = ''

@@ -5,8 +5,8 @@ class main(plugin_collection.Plugin):
     
     def __init__(self, status_only: bool = False):
         super().__init__()
-        self.index = 3
-        self.name = 'status_only'
+        self.index = 3 # Set to -1 to disable plug-in.
+        self.name = 'Status Only'
         self.description = ''
         self.type = ''
         self.status_only = status_only

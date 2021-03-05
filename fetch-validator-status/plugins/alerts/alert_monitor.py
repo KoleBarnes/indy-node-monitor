@@ -6,7 +6,7 @@ class main(plugin_collection.Plugin):
     
     def __init__(self,  alerts = None):
         super().__init__()
-        self.index = 2
+        self.index = 2 # Set to -1 to disable plug-in.
         self.name = 'Alerts'
         self.description = ''
         self.type = ''

@@ -74,6 +74,7 @@ class PluginCollection(object):
         provided plugin package to load all available plugins
         """
         self.plugins = []
+        self.disabled_plugins = []
         self.seen_paths = []
         # print(f'\nLooking for plugins under package {self.plugin_package}')
         self.walk_package(self.plugin_package)
@@ -81,11 +82,11 @@ class PluginCollection(object):
     def apply_all_plugins_on_value(self, result, network_name):
         """Apply all of the plugins with the argument supplied to this function
         """
-        self.log(f'Running plugins...\n')
+        self.log(f'\033[38;5;37mRunning plugins...\033[0m\n')
         for plugin in self.plugins:
-            self.log(f'Running {plugin.name}...')
+            self.log(f'\033[38;5;37mRunning {plugin.name}...\033[0m')
             value = plugin.perform_operation(result, network_name)
-            self.log((f'{plugin.name} yields value {value}\n'))
+            self.log((f'\033[38;5;37m{plugin.name} yields value {value}\n\033[0m'))
 
     def walk_package(self, package):
         """Recursively walk the supplied package to retrieve all plugins
@@ -100,7 +101,11 @@ class PluginCollection(object):
                     # Only add classes that are a sub class of Plugin, but NOT Plugin itself
                     if issubclass(c, Plugin) & (c is not Plugin):
                         # print(f'    Found plugin class: {c.__module__}.{c.__name__}')
-                        self.plugins.append(c())
+                        if c().index == -1:
+                            print(c())
+                            self.disabled_plugins.append(c())
+                        else:
+                            self.plugins.append(c())
 
 
         # Now that we have looked at all the modules in the current package, start looking
@@ -141,6 +146,8 @@ class PluginCollection(object):
             print(*args, file=sys.stderr)
 
     def plugin_list(self):
-        self.log("--- Loaded Plugins ---")
+        self.log("\033[38;5;37m--- Plug-ins ---\033[0m")
         for plugin in self.plugins:
-            self.log(f"{plugin.name}: {plugin.__class__.__module__}.{plugin.__class__.__name__}")
+            self.log(f"\033[92mENABLED: {plugin.name}: {plugin.__class__.__module__}.{plugin.__class__.__name__}\033[0m")
+        for disabled_plugin in self.disabled_plugins:
+            self.log(f"\033[91mDISABLED: {disabled_plugin.name}: {disabled_plugin.__class__.__module__}.{disabled_plugin.__class__.__name__}\033[0m")
