@@ -3,13 +3,12 @@ import json
 
 class main(plugin_collection.Plugin):
     
-    def __init__(self, status_only: bool = False):
+    def __init__(self):
         super().__init__()
         self.index = 2 # Set to -1 to disable plug-in.
         self.name = 'Status Only'
         self.description = ''
         self.type = ''
-        self.status_only = status_only
 
     def parse_args(self, parser, argv=None):
         parser.add_argument("--status", action="store_true", help="Get status only.  Suppresses detailed results.")
@@ -18,17 +17,10 @@ class main(plugin_collection.Plugin):
         global verbose
         verbose = args.verbose
         
-        self.status_only = args.status
+        self.enabled = args.status
     
     def perform_operation(self, result, network_name):
-        if self.status_only:
-            for node in result:
-                if "response" in node:
-                    node.pop("response")
+        for node in result:
+            if "response" in node:
+                node.pop("response")
         return result
-    
-    def enabled(self):
-        if self.status_only:
-            return True
-        else:
-            return False

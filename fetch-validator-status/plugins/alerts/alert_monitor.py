@@ -4,13 +4,12 @@ import json
 
 class main(plugin_collection.Plugin):
     
-    def __init__(self,  alerts = None):
+    def __init__(self):
         super().__init__()
         self.index = 1 # Set to -1 to disable plug-in.
         self.name = 'Alerts'
         self.description = ''
         self.type = ''
-        self.alerts = alerts
 
     # def description(self)
     #     return self.description
@@ -22,22 +21,14 @@ class main(plugin_collection.Plugin):
         global verbose
         verbose = args.verbose
 
-        if args.alerts:
-            self.alerts = args.alerts
+        self.enabled = args.alerts
 
     def perform_operation(self, result, network_name):
         # Filter on alerts
-        if self.alerts:
-            filtered_result = []
-            for item in result:
-                if ("info" in item["status"]) or ("warnings" in  item["status"]) or ("errors" in  item["status"]):
-                    filtered_result.append(item)
-            result = filtered_result
+        filtered_result = []
+        for item in result:
+            if ("info" in item["status"]) or ("warnings" in  item["status"]) or ("errors" in  item["status"]):
+                filtered_result.append(item)
+        result = filtered_result
         return result
-
-    def enabled(self):
-        if self.alerts:
-            return True
-        else:
-            return False
 

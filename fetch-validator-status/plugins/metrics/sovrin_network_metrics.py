@@ -6,16 +6,15 @@ import os
 
 class main(plugin_collection.Plugin):
     
-    def __init__(self, mlog=None, gauth_json=None, file_name=None, worksheet_name=None):
+    def __init__(self):
         super().__init__()
         self.index = -1 # Set to -1 to disable plug-in.
         self.name = 'Sovrin Network Metrics'
         self.description = ''
         self.type = ''
-        self.mlog = mlog
-        self.gauth_json = gauth_json
-        self.file_name = file_name
-        self.worksheet_name = worksheet_name
+        self.gauth_json = None
+        self.file_name = None
+        self.worksheet_name = None
 
 
     def parse_args(self, parser, argv=None):
@@ -38,7 +37,7 @@ class main(plugin_collection.Plugin):
 
         if args.mlog:
             if args.json and args.file and args.worksheet:
-                self.mlog = args.mlog
+                self.enabled = args.mlog
                 self.gauth_json = args.json
                 self.file_name = args.file
                 self.worksheet_name = args.worksheet
@@ -49,34 +48,27 @@ class main(plugin_collection.Plugin):
 
     def perform_operation(self, result, network_name):
 
-        if self.mlog:
-            authD_client = gspread_authZ(self.gauth_json)
-            message = ""
-            num_of_nodes = 0
-            nodes_offline = 0
-            time = datetime.datetime.now().strftime('%m/%d/%Y %H:%M:%S') # formated to 12/3/2020 21:27:49
+        authD_client = gspread_authZ(self.gauth_json)
+        message = ""
+        num_of_nodes = 0
+        nodes_offline = 0
+        time = datetime.datetime.now().strftime('%m/%d/%Y %H:%M:%S') # formated to 12/3/2020 21:27:49
 
-            for node in result:
-                num_of_nodes += 1
-                if node["status"]["ok"] == False:
-                    nodes_offline += 1
+        for node in result:
+            num_of_nodes += 1
+            if node["status"]["ok"] == False:
+                nodes_offline += 1
 
-            networkResilience = num_of_nodes - round((num_of_nodes - 1 ) / 3)
+        networkResilience = num_of_nodes - round((num_of_nodes - 1 ) / 3)
 
-            # Could have a stepped warning system
-            if nodes_offline >= networkResilience:
-                message = "Network Resilience Danger!"
+        # Could have a stepped warning system
+        if nodes_offline >= networkResilience:
+            message = "Network Resilience Danger!"
 
-            active_nodes = num_of_nodes - nodes_offline
+        active_nodes = num_of_nodes - nodes_offline
 
-            row = [time, network_name, num_of_nodes, nodes_offline, networkResilience, active_nodes, message]
-            print(row)
-            gspread_append_sheet(authD_client, self.file_name, self.worksheet_name, row)
-            print(f"\033[92mPosted to {self.file_name} in sheet {self.worksheet_name}.\033[m")
+        row = [time, network_name, num_of_nodes, nodes_offline, networkResilience, active_nodes, message]
+        print(row)
+        gspread_append_sheet(authD_client, self.file_name, self.worksheet_name, row)
+        print(f"\033[92mPosted to {self.file_name} in sheet {self.worksheet_name}.\033[m")
         return result
-
-    def enabled(self):
-        if self.mlog:
-            return True
-        else:
-            return False

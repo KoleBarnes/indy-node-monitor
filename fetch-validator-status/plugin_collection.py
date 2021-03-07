@@ -42,6 +42,7 @@ class Plugin(object):
         self.name = 'UNKNOWN'
         self.description = 'UNKNOWN'
         self.type = 'UNKNOWN'
+        self.enabled = False
 
     def parse_args(self, argument):
         raise NotImplementedError
@@ -53,9 +54,6 @@ class Plugin(object):
         """The method that we expect all plugins to implement. This is the
         method that our framework will call
         """
-        raise NotImplementedError
-
-    def enabled(self):
         raise NotImplementedError
 
 class PluginCollection(object):
@@ -85,7 +83,7 @@ class PluginCollection(object):
         """
         self.log(f'\033[38;5;37mRunning plugins...\033[0m\n')
         for plugin in self.plugins:
-            if plugin.enabled():
+            if plugin.enabled:
                 self.log(f'\033[38;5;37mRunning {plugin.name}...\033[0m')
                 result = plugin.perform_operation(result, network_name)
                 self.log((f'\033[38;5;37m{plugin.name} yields value {result}\033[0m\n'))
