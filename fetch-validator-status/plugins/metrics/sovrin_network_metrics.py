@@ -8,7 +8,7 @@ class main(plugin_collection.Plugin):
     
     def __init__(self, mlog=None, gauth_json=None, file_name=None, worksheet_name=None):
         super().__init__()
-        self.index = 1 # Set to -1 to disable plug-in.
+        self.index = -1 # Set to -1 to disable plug-in.
         self.name = 'Sovrin Network Metrics'
         self.description = ''
         self.type = ''
@@ -73,3 +73,10 @@ class main(plugin_collection.Plugin):
             print(row)
             gspread_append_sheet(authD_client, self.file_name, self.worksheet_name, row)
             print(f"\033[92mPosted to {self.file_name} in sheet {self.worksheet_name}.\033[m")
+        return result
+
+    def enabled(self):
+        if self.mlog:
+            return True
+        else:
+            return False

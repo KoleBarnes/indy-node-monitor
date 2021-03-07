@@ -52,6 +52,7 @@ def seed_as_bytes(seed):
 async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = None, network_name: str = None):
 
     # Start of engine
+    # add counter
     while True:
         try:
             pool = await open_pool(transactions_path=genesis_path)
@@ -130,7 +131,8 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
     # Connection Issues
     await detect_connection_issues(result)
 
-    monitor_plugins.apply_all_plugins_on_value(result, network_name)
+    result = monitor_plugins.apply_all_plugins_on_value(result, network_name)
+    print(json.dumps(result, indent=2))
     
 # ansys plug-in
 async def get_node_addresses(entry: any, verifiers: any) -> any:
@@ -345,8 +347,9 @@ if __name__ == "__main__":
     # parser.add_argument("-a", "--anonymous", action="store_true", help="Perform requests anonymously, without requiring privileged DID seed.")
     parser.add_argument("--nodes", help="The comma delimited list of the nodes from which to collect the status.  The default is all of the nodes in the pool.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging.")
-    # Get parse args from the plug-ins
+
     monitor_plugins.get_parse_args(parser)
+
     args, unknown = parser.parse_known_args()
 
     verbose = args.verbose

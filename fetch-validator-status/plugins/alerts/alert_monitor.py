@@ -6,7 +6,7 @@ class main(plugin_collection.Plugin):
     
     def __init__(self,  alerts = None):
         super().__init__()
-        self.index = 2 # Set to -1 to disable plug-in.
+        self.index = 1 # Set to -1 to disable plug-in.
         self.name = 'Alerts'
         self.description = ''
         self.type = ''
@@ -33,5 +33,11 @@ class main(plugin_collection.Plugin):
                 if ("info" in item["status"]) or ("warnings" in  item["status"]) or ("errors" in  item["status"]):
                     filtered_result.append(item)
             result = filtered_result
-            print(json.dumps(result, indent=2))
+        return result
+
+    def enabled(self):
+        if self.alerts:
+            return True
+        else:
+            return False
 

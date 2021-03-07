@@ -12,7 +12,7 @@ class main(plugin_collection.Plugin):
     def __init__(self, example: bool = False):
         # Below is required in order to diferecate between plug-ins 
         super().__init__()
-        self.index = -1 # Set to -1 to disable plug-in.
+        self.index = 3 # Set to -1 to disable plug-in.
         self.name = 'Example Plug-in'
         self.description = ''
         self.type = ''
@@ -41,6 +41,14 @@ class main(plugin_collection.Plugin):
     def perform_operation(self, result, network_name):
         # This is required to see whether the plug-in was asked to be run by the user.
         if self.example:
-
             # Main code here
-            print("Example plug-in has run.")
+            for node in result: 
+                node["examplePlugin"] = "Hello World"
+
+        return result
+
+    def enabled(self):
+        if self.example:
+            return True
+        else:
+            return False

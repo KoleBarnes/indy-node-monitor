@@ -5,7 +5,7 @@ class main(plugin_collection.Plugin):
     
     def __init__(self, status_only: bool = False):
         super().__init__()
-        self.index = 3 # Set to -1 to disable plug-in.
+        self.index = 2 # Set to -1 to disable plug-in.
         self.name = 'Status Only'
         self.description = ''
         self.type = ''
@@ -25,4 +25,10 @@ class main(plugin_collection.Plugin):
             for node in result:
                 if "response" in node:
                     node.pop("response")
-            print(json.dumps(result, indent=2))
+        return result
+    
+    def enabled(self):
+        if self.status_only:
+            return True
+        else:
+            return False
