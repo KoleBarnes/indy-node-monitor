@@ -12,14 +12,14 @@ class main(plugin_collection.Plugin):
     def __init__(self):
         # Below is required in order to diferecate between plug-ins 
         super().__init__()
-        self.index = 3 # Set to -1 to disable plug-in.
+        self.index = 3
         self.name = 'Example Plug-in'
         self.description = ''
         self.type = ''
 
     # Declear your parser arguments here. This will get them and add them to the fetch_status.py parser arguments
     # and allow them to come up in the help flag.
-    def parse_args(self, parser, argv=None):
+    def parse_args(self, parser):
         parser.add_argument("--example", action="store_true", help="Runs expample plug-in")
 
     # Here you set your variables with the arguments from the parser
@@ -33,7 +33,7 @@ class main(plugin_collection.Plugin):
     
     # The is where your main code goes and what is kicked off after the information has been gotten from the pool
     # and gets passed the results of the network and the name of the network the results came from.
-    def perform_operation(self, result, network_name):
+    async def perform_operation(self, result, network_name, response, verifiers, ident):
         # This is required to see whether the plug-in was asked to be run by the user.
         # Main code here
         for node in result: 

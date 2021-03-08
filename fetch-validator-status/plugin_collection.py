@@ -78,15 +78,15 @@ class PluginCollection(object):
         self.walk_package(self.plugin_package)
         self.sort()
 
-    def apply_all_plugins_on_value(self, result, network_name):
+    async def apply_all_plugins_on_value(self, result, network_name, response, verifiers, ident):
         """Apply all of the plugins with the argument supplied to this function
         """
         self.log(f'\033[38;5;37mRunning plugins...\033[0m\n')
         for plugin in self.plugins:
             if plugin.enabled:
                 self.log(f'\033[38;5;37mRunning {plugin.name}...\033[0m')
-                result = plugin.perform_operation(result, network_name)
-                self.log((f'\033[38;5;37m{plugin.name} yields value {result}\033[0m\n'))
+                result = await plugin.perform_operation(result, network_name, response, verifiers, ident)
+                self.log((f'\033[38;5;37m{plugin.name} yields value\033[0m\n')) #{result}
             else:
                 self.log(f"\033[38;5;3m{plugin.name} disabled.\033[0m\n")
         return result
