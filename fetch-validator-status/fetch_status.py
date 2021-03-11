@@ -5,7 +5,7 @@ import asyncio
 import json
 import os
 import sys
-import datetime
+# import datetime
 import urllib.request
 # from typing import Tuple
 
@@ -31,8 +31,7 @@ def log(*args):
 
 
 async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = None, network_name: str = None):
-
-    # Start of engine
+    # Start Of Engine
     attempt = 3
     while attempt:
         try:
@@ -40,7 +39,7 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
         except:
             log("Pool Timed Out! Trying again...")
             if not attempt:
-                log("Unable to get pool Response! Exiting...")
+                print("Unable to get pool Response! 3 attempts where made. Exiting...")
                 exit()
             attempt -= 1
             continue
@@ -64,46 +63,10 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
         verifiers = await pool.get_verifiers()
     except AttributeError:
         pass
-
-    # end of engine feeds pass to result = anlz(result, response, verifiers)
-
-    # Connection Issues
-    await detect_connection_issues(result)
+    # End Of Engine
 
     result = await monitor_plugins.apply_all_plugins_on_value(result, network_name, response, verifiers, ident)
     print(json.dumps(result, indent=2))
-    
-async def detect_connection_issues(result: any) -> any:
-    for node in result:
-        connection_errors = []
-        node_name = node["name"]
-        if "warnings" in node:
-            for warning in node["warnings"]:
-                if "unreachable_nodes" in warning :
-                    for item in warning["unreachable_nodes"]["nodes"].split(', '):
-                        # This is the name of the unreachable node.  Now we need to determine whether that node can't see the current one.
-                        # If the nodes can't see each other, upgrade to an error condition.
-                        unreachable_node_name = item
-                        unreachable_node_query_result = [t for t in result if t["name"] == unreachable_node_name]
-                        if unreachable_node_query_result:
-                            unreachable_node = unreachable_node_query_result[0]
-                            if "warnings" in unreachable_node:
-                                for unreachable_node_warning in unreachable_node["warnings"]:
-                                    if "unreachable_nodes" in unreachable_node_warning :
-                                        for unreachable_node_item in unreachable_node_warning["unreachable_nodes"]["nodes"].split(', '):
-                                            if unreachable_node_item == node_name:
-                                                connection_errors.append(node_name + " and " + unreachable_node_name + " can't reach each other.")
-
-        # Merge errors and update status
-        if connection_errors:
-            if "errors" in node:
-                for item in connection_errors:
-                    node["errors"].append(item)
-            else:
-                node["errors"] = connection_errors
-            node["status"]["errors"] = len(node["errors"])
-            node["status"]["ok"] = (len(node["errors"]) <= 0)
-
 
 def get_script_dir():
     return os.path.dirname(os.path.realpath(__file__))
@@ -137,7 +100,6 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging.")
 
     monitor_plugins.get_parse_args(parser)
-
     args, unknown = parser.parse_known_args()
 
     verbose = args.verbose
