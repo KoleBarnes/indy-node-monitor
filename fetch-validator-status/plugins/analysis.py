@@ -161,49 +161,50 @@ class main(plugin_collection.Plugin):
         errors = []
         warnings = []
         ledger_sync_status={}
-        if ("REPLY" in jsval["op"]) and ("Node_info" in jsval["result"]["data"]):
-            # Ledger Write Consensus Issues
-            if not jsval["result"]["data"]["Node_info"]["Freshness_status"]["0"]["Has_write_consensus"]:
-                errors.append("Config Ledger Has_write_consensus: {0}".format(jsval["result"]["data"]["Node_info"]["Freshness_status"]["0"]["Has_write_consensus"]))
-            if not jsval["result"]["data"]["Node_info"]["Freshness_status"]["1"]["Has_write_consensus"]:
-                errors.append("Main Ledger Has_write_consensus: {0}".format(jsval["result"]["data"]["Node_info"]["Freshness_status"]["1"]["Has_write_consensus"]))
-            if not jsval["result"]["data"]["Node_info"]["Freshness_status"]["2"]["Has_write_consensus"]:
-                errors.append("Pool Ledger Has_write_consensus: {0}".format(jsval["result"]["data"]["Node_info"]["Freshness_status"]["2"]["Has_write_consensus"]))
-            if "1001" in  jsval["result"]["data"]["Node_info"]["Freshness_status"]:
-                if not jsval["result"]["data"]["Node_info"]["Freshness_status"]["1001"]["Has_write_consensus"]:
-                    errors.append("Token Ledger Has_write_consensus: {0}".format(jsval["result"]["data"]["Node_info"]["Freshness_status"]["1001"]["Has_write_consensus"]))
+        if "REPLY" in jsval["op"]:
+            if "Node_info" in jsval["result"]["data"]:
+                # Ledger Write Consensus Issues
+                if not jsval["result"]["data"]["Node_info"]["Freshness_status"]["0"]["Has_write_consensus"]:
+                    errors.append("Config Ledger Has_write_consensus: {0}".format(jsval["result"]["data"]["Node_info"]["Freshness_status"]["0"]["Has_write_consensus"]))
+                if not jsval["result"]["data"]["Node_info"]["Freshness_status"]["1"]["Has_write_consensus"]:
+                    errors.append("Main Ledger Has_write_consensus: {0}".format(jsval["result"]["data"]["Node_info"]["Freshness_status"]["1"]["Has_write_consensus"]))
+                if not jsval["result"]["data"]["Node_info"]["Freshness_status"]["2"]["Has_write_consensus"]:
+                    errors.append("Pool Ledger Has_write_consensus: {0}".format(jsval["result"]["data"]["Node_info"]["Freshness_status"]["2"]["Has_write_consensus"]))
+                if "1001" in  jsval["result"]["data"]["Node_info"]["Freshness_status"]:
+                    if not jsval["result"]["data"]["Node_info"]["Freshness_status"]["1001"]["Has_write_consensus"]:
+                        errors.append("Token Ledger Has_write_consensus: {0}".format(jsval["result"]["data"]["Node_info"]["Freshness_status"]["1001"]["Has_write_consensus"]))
 
-            # Ledger Status
-            for ledger, status in jsval["result"]["data"]["Node_info"]["Catchup_status"]["Ledger_statuses"].items():
-                if status != "synced":
-                    ledger_sync_status[ledger] = status
-            if ledger_sync_status:
-                ledger_status = {}
-                ledger_status["ledger_status"] = ledger_sync_status
-                ledger_status["ledger_status"]["transaction-count"] = jsval["result"]["data"]["Node_info"]["Metrics"]["transaction-count"]
-                warnings.append(ledger_status)
+                # Ledger Status
+                for ledger, status in jsval["result"]["data"]["Node_info"]["Catchup_status"]["Ledger_statuses"].items():
+                    if status != "synced":
+                        ledger_sync_status[ledger] = status
+                if ledger_sync_status:
+                    ledger_status = {}
+                    ledger_status["ledger_status"] = ledger_sync_status
+                    ledger_status["ledger_status"]["transaction-count"] = jsval["result"]["data"]["Node_info"]["Metrics"]["transaction-count"]
+                    warnings.append(ledger_status)
 
-            # Mode
-            if jsval["result"]["data"]["Node_info"]["Mode"] != "participating":
-                warnings.append("Mode: {0}".format(jsval["result"]["data"]["Node_info"]["Mode"]))
+                # Mode
+                if jsval["result"]["data"]["Node_info"]["Mode"] != "participating":
+                    warnings.append("Mode: {0}".format(jsval["result"]["data"]["Node_info"]["Mode"]))
 
-            # Primary Node Mismatch
-            if jsval["result"]["data"]["Node_info"]["Replicas_status"][node+":0"]["Primary"] != primary:
-                warnings.append("Primary Mismatch! This Nodes Primary: {0} (Expected: {1})".format(jsval["result"]["data"]["Node_info"]["Replicas_status"][node+":0"]["Primary"], primary))
+                # Primary Node Mismatch
+                if jsval["result"]["data"]["Node_info"]["Replicas_status"][node+":0"]["Primary"] != primary:
+                    warnings.append("Primary Mismatch! This Nodes Primary: {0} (Expected: {1})".format(jsval["result"]["data"]["Node_info"]["Replicas_status"][node+":0"]["Primary"], primary))
 
-            # Unreachable Nodes
-            if jsval["result"]["data"]["Pool_info"]["Unreachable_nodes_count"] > 0:
-                unreachable_node_list = []
-                unreachable_nodes = {"unreachable_nodes":{}}
-                unreachable_nodes["unreachable_nodes"]["count"] = jsval["result"]["data"]["Pool_info"]["Unreachable_nodes_count"]
-                for unreachable_node in jsval["result"]["data"]["Pool_info"]["Unreachable_nodes"]:
-                    unreachable_node_list.append(unreachable_node[0])
-                unreachable_nodes["unreachable_nodes"]["nodes"] = ', '.join(unreachable_node_list)
-                warnings.append(unreachable_nodes)
+                # Unreachable Nodes
+                if jsval["result"]["data"]["Pool_info"]["Unreachable_nodes_count"] > 0:
+                    unreachable_node_list = []
+                    unreachable_nodes = {"unreachable_nodes":{}}
+                    unreachable_nodes["unreachable_nodes"]["count"] = jsval["result"]["data"]["Pool_info"]["Unreachable_nodes_count"]
+                    for unreachable_node in jsval["result"]["data"]["Pool_info"]["Unreachable_nodes"]:
+                        unreachable_node_list.append(unreachable_node[0])
+                    unreachable_nodes["unreachable_nodes"]["nodes"] = ', '.join(unreachable_node_list)
+                    warnings.append(unreachable_nodes)
 
-            # Denylisted Nodes
-            if len(jsval["result"]["data"]["Pool_info"]["Blacklisted_nodes"]) > 0:
-                warnings.append("Denylisted Nodes: {1}".format(jsval["result"]["data"]["Pool_info"]["Blacklisted_nodes"]))
+                # Denylisted Nodes
+                if len(jsval["result"]["data"]["Pool_info"]["Blacklisted_nodes"]) > 0:
+                    warnings.append("Denylisted Nodes: {1}".format(jsval["result"]["data"]["Pool_info"]["Blacklisted_nodes"]))
         else:
             if "reason" in jsval:
                 errors.append(jsval["reason"])
