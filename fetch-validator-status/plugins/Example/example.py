@@ -6,20 +6,18 @@ import plugin_collection
 # Add your imports here
 import json
 
-# The plug-in collection will find any base classes in the file.
+# The plug-in collection will find classes in the file.
 class main(plugin_collection.Plugin):
-    # __init__ is required and has the necessary items in order to differentiate between plug-ins
+    # __init__ is required and has the necessary items in order to differentiate between plug-ins.
     def __init__(self):
-        # Below is required in order to diferecate between plug-ins 
         super().__init__()
         self.index = 3
         self.name = 'Example Plug-in'
         self.description = ''
         self.type = ''
 
-    # Declear your parser arguments here. This will get them and add them to the fetch_status.py parser arguments
-    # and allow them to come up in the help flag.
     def parse_args(self, parser):
+        # Declear your parser arguments here. This will add them to the fetch_status.py parser arguments.
         parser.add_argument("--example", action="store_true", help="Runs expample plug-in")
 
     # Here you set your variables with the arguments from the parser
@@ -28,15 +26,17 @@ class main(plugin_collection.Plugin):
         global verbose
         verbose = args.verbose
         
-        # Set your varables here
+        # Reqired to enable your plug-in. This should match your parser argument. i.e. --example -> args.example
         self.enabled = args.example
+
+        # Set your varables here
     
-    # The is where your main code goes and what is kicked off after the information has been gotten from the pool
+    # This is where your main code goes and what is kicked off after the information has been gotten from the pool
     # and gets passed the results of the network and the name of the network the results came from.
     async def perform_operation(self, result, network_name, response, verifiers, ident):
-        # This is required to see whether the plug-in was asked to be run by the user.
         # Main code here
         for node in result: 
             node["examplePlugin"] = "Hello World"
 
+        # Reqired for chaining plugins whether or not you are using result.
         return result

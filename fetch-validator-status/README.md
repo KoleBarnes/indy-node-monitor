@@ -108,15 +108,14 @@ or
 ./run.sh --genesis-url=http://localhost:9000/genesis --seed=000000000000000000000000Trustee1
 ```
 
-
-To perform an anonymous connection test when a privileged DID seed is not available, omit the `SEED` and pass the `-a` parameter:
+To perform an anonymous connection test when a privileged DID seed is not available, omit the `SEED` (`-a` is no longer needed to perform an anonymous connection):
 
 ``` bash
-./run.sh --net=<netId> -a
+./run.sh --net=<netId>
 ```
 or
 ``` bash
-./run.sh --genesis-url=<URL> -a
+./run.sh --genesis-url=<URL>
 ```
 
 If running in the browser, you will have to get the URL for the Genesis file (as described above) and replace the `localhost` URL above.
@@ -152,7 +151,7 @@ cd von-network
 
 ### Extracting Useful Information
 
-Once you have the script running, you can write a program that takes the JSON input and produces a more useful monitoring output file&mdash;probably still in JSON. Here is some information that would be useful to extract from the JSON output:
+Once you have the script running, you can write a [plug-in]() that takes the JSON input and produces a more useful monitoring output file&mdash;probably still in JSON. Here is some information that would be useful to extract from the JSON output:
 
 - Detect when a node is inaccessible (as with Node 1 above) and produce standard output for that situation.
 - Detect any nodes that are accessible (populated JSON data) but that are "unreachable" to some or all of the other Indy nodes.
@@ -166,6 +165,24 @@ Once you have the script running, you can write a program that takes the JSON in
 The suggestions above are only ideas. Precise meanings of the values should be investigated, particularly for "ledger" type data (e.g. number of transactions) but that are generated on a per node basis.
 
 Note that there are three different formats for the timestamps in the data structure, and all appear to be UTC. Make sure to convert times into a single format during collection.
+
+### Building Plug-ins
+
+Build your own class based plugins to extract the information you want. Have a look at the preinstalled [example plug-in](./plugins/Example/example.py) to see how to build your own. 
+
+### About Plug-ins
+
+Plug-in modals and packages are collected from the plug-ins folder and sorted  based on the order specified by you by setting the index property in the given plug-in. Once the plug-ins are loaded the parser arguments are collected from the `parse_args()` function from each of the plug-ins. Once the parser has collected the arguments they are then passed into the `load_parse_args()` function where the plug-in collects its class variables.
+
+The data collected from the network is passed in sequence to each of the plugins, giving each the opportunity to parse and manipulate the data before passing the result back for subsequent plugins.
+
+note: plug-ins are only enabled when a flag is given.
+i.e. the alerts plug-in will only run if the `--alerts` flag is given.
+if you have a plug-in that requires more then one argument the first flag will enable the plug-in and the following flags would contain your additional arguments
+
+When all the plug-ins are set up the monitor engine will get the information from the specified network and return that data to the plugins. plug-in are then iterated through and are chain-able.
+
+Have a look at the preinstalled plug-ins to get an idea of how to build your own!
 
 ### Running against other Indy Networks
 
