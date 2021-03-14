@@ -33,7 +33,7 @@ class main(plugin_collection.Plugin):
     
     # This is where your main code goes and what is kicked off after the information has been gotten from the pool
     # and gets passed the results of the network and the name of the network the results came from.
-    async def perform_operation(self, result, network_name, response, verifiers, ident):
+    async def perform_operation(self, result, network_name, response, verifiers):
         # Main code here
         for node in result: 
             node["examplePlugin"] = "Hello World"

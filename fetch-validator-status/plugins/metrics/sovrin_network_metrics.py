@@ -46,7 +46,7 @@ class main(plugin_collection.Plugin):
                 print('ex: --mlog --json [Json File Name] --file [Google Sheet File Name] --worksheet [Worksheet name]')
                 exit()
 
-    async def perform_operation(self, result, network_name, response, verifiers, ident):
+    async def perform_operation(self, result, network_name, response, verifiers):
 
         authD_client = gspread_authZ(self.gauth_json)
         message = ""

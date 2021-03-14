@@ -23,7 +23,7 @@ class main(plugin_collection.Plugin):
 
         self.enabled = args.alerts
 
-    async def perform_operation(self, result, network_name, response, verifiers, ident):
+    async def perform_operation(self, result, network_name, response, verifiers):
         # Filter on alerts
         filtered_result = []
         for item in result:

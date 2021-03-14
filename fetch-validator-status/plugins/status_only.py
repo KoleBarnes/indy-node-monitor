@@ -19,7 +19,7 @@ class main(plugin_collection.Plugin):
         
         self.enabled = args.status
     
-    async def perform_operation(self, result, network_name, response, verifiers, ident):
+    async def perform_operation(self, result, network_name, response, verifiers):
         for node in result:
             if "response" in node:
                 node.pop("response")
