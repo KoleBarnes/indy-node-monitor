@@ -1,6 +1,8 @@
 **/conf/
 **/log/
 *.env
+**/AlertLogs/**/*.json
+**/EmailContent/**/*.txt
 
 ###
 ### Python

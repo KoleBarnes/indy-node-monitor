@@ -34,7 +34,8 @@ docker build -t fetch_status . > /dev/null 2>&1
 cmd="${terminalEmu} docker run --rm ${DOCKER_INTERACTIVE} \
   -e "GENESIS_PATH=${GENESIS_PATH}" \
   -e "GENESIS_URL=${GENESIS_URL}" \
-  -e "SEED=${SEED}""
+  -e "SEED=${SEED}" \
+  --env-file ./plugins/alerts/notify.env"
   
 
 # Dynamically mount teh 'conf' directory if it exists.
@@ -44,6 +45,10 @@ fi
 
 if [ -d "./plugins" ]; then
   cmd+=$(getVolumeMount "./plugins")
+fi
+
+if [ -d "./plugins/alerts/JsonAlertLogs/" ]; then
+  cmd+=$(getVolumeMount "./plugins/alerts/JsonAlertLogs/")
 fi
 
 cmd+="fetch_status \"$@\""
