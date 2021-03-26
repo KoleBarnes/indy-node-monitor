@@ -16,6 +16,7 @@ class main(plugin_collection.Plugin):
         self.name = 'alerts_monitor'
         self.description = ''
         self.type = ''
+        self.nodes = []
 
     def parse_args(self, parser):
         parser.add_argument("--alerts_monitor", action="store_true", help="Filter results based on alerts.  Only return data for nodes containing detected 'info', 'warnings', or 'errors'.")
@@ -42,34 +43,42 @@ class main(plugin_collection.Plugin):
         if result:
             if self.notify: 
                 for node in result:
-                    node_name = node["name"]
-                    alert_log_path = "./plugins/alerts/AlertLogs/"
                     logging.basicConfig(filename='./plugins/alerts/Debug.log', datefmt='%m/%d/%Y %I:%M:%S %p', format='%(asctime)s: %(levelname)s: %(message)s', level=logging.DEBUG)
-
-                    if os.path.exists(f'{alert_log_path}{node_name}.json'):
-                        self.read_alert_log(node_name, alert_log_path, network_name)
-                    else:
-                        try:
-                            logging.info(f'Getting data for {node_name} on {network_name}')
-                            recipients_email = self.get_contact_info(node_name)
-                        except Exception as e: 
-                            logging.error(e)
-                            print("\033[91mError occurred while getting info from Airtable. Check debug log!\033[m")
-                            EMAIL_ADDRESS = os.environ.get('Sovrin_Email_App_User')
-                            subject = "Error occurred in Alerts in Node Monitor"
-                            content = open('./plugins/alerts/EmailContent/ErrorAlert.txt').read()
-                            self.send_email(subject, content, node_name, network_name, cc_email=EMAIL_ADDRESS)
-                        else:
-                            self.create_alert_log(node, node_name, network_name, alert_log_path, recipients_email)
-                            self.read_alert_log(node_name, alert_log_path, network_name)
-            
+                    
+                    self.nodes.append(notify(node, network_name))
+                    print(self.nodes)
             else:
                 print(json.dumps(result, indent=2))
 
         return result
 
-                        
-    def get_contact_info(self, node_name):
+class notify(object):
+    def __init__(self, node, network_name):
+        self.node = node
+        self.network_name = network_name
+        self.node_name = node["name"]
+        self.path = "./plugins/alerts/AlertLogs/"
+        self.fetch()
+
+    def fetch(self):
+        if os.path.exists(f'{self.path}{self.node_name}.json'):
+            self.read_alert_log()
+        else:
+            try:
+                logging.info(f'Getting data for {self.node_name} on {self.network_name}')
+                recipients_email = self.get_contact_info()
+            except Exception as e: 
+                logging.error(e)
+                print("\033[91mError occurred while getting info from Airtable. Check debug log!\033[m")
+                EMAIL_ADDRESS = os.environ.get('Sovrin_Email_App_User')
+                subject = "Error occurred in Alerts in Node Monitor"
+                content = open('./plugins/alerts/EmailContent/ErrorAlert.txt').read()
+                self.send_email(subject, content, self.node_name, self.network_name, cc_email=EMAIL_ADDRESS)
+            else:
+                self.create_alert_log(recipients_email)
+                self.read_alert_log()
+
+    def get_contact_info(self):
         AIRTABLE_API_KEY = os.environ.get('Airtable_API_Key')
         headers = {"Authorization": "Bearer " + AIRTABLE_API_KEY}
 
@@ -78,7 +87,7 @@ class main(plugin_collection.Plugin):
         CONTACT_TYPE = "Technical"
 
         # Gets the company name by filtering for the alerted node listed with the company from airtable.
-        COMPANIES_URL = COMPANIES_URL + f'?filterByFormula=SEARCH("{node_name}",%7BSteward Nodes%7D)'
+        COMPANIES_URL = COMPANIES_URL + f'?filterByFormula=SEARCH("{self.node_name}",%7BSteward Nodes%7D)'
         company_records = self.get_records(COMPANIES_URL, headers)
 
         company_name = None
@@ -116,15 +125,15 @@ class main(plugin_collection.Plugin):
             logging.error("Airtable responded with empty response!")
         return(airtable_response)
 
-    def create_alert_log(self, node, node_name, network_name, alert_log_path, recipients_email):
+    def create_alert_log(self, recipients_email):
         print('New alert creating log...', end='')
         email_content_path = "./plugins/alerts/EmailContent/"
         recipients_email = [recipients_email]
         cc_email = [os.environ.get('Sovrin_Email_App_User')]
 
         alert = {
-            "network": network_name,
-            "node": node,
+            "network": self.network_name,
+            "node": self.node,
             "contactInfo": {"recipients_email": recipients_email, 'cc_email': cc_email},
             "notify": {
                 "1": {"time_sent": None, "time_till_email": 120, "plainText_content": email_content_path + "StageOneEmail.txt"},
@@ -134,15 +143,15 @@ class main(plugin_collection.Plugin):
         }
 
         # Create Alert file with dict above.
-        with open(f'{alert_log_path}{node_name}.json', 'w') as outfile:
+        with open(f'{self.path}{self.node_name}.json', 'w') as outfile:
             json.dump(alert, outfile, indent=2)
             print('\033[92mDONE\033[m')
 
-    def read_alert_log(self, node_name, alert_log_path, network_name):
+    def read_alert_log(self):
         ALL_EMAILS_SENT = False
 
         # Get Alert Json Content
-        with open(f'{alert_log_path}{node_name}.json', 'r') as json_file:
+        with open(f'{self.path}{self.node_name}.json', 'r') as json_file:
             data = json.load(json_file)
 
         # Go throught the stages of the alert until a stage with time_sent = Null, then get info.
@@ -172,31 +181,31 @@ class main(plugin_collection.Plugin):
                 # Build email
                 
                 # Find out what network we are on and find which folder the log will be in.
-                if network_name == 'Sovrin Main Net': log_folder = 'live'
-                elif network_name == 'Sovrin Staging Net': log_folder = 'sandbox'
-                elif network_name == 'Sovrin Builder Net': log_folder = 'net3'
+                if self.network_name == 'Sovrin Main Net': log_folder = 'live'
+                elif self.network_name == 'Sovrin Staging Net': log_folder = 'sandbox'
+                elif self.network_name == 'Sovrin Builder Net': log_folder = 'net3'
 
-                subject = f'Your node ({node_name}) on the {network_name} needs attention'
-                content = open(plainText_content).read().format(node=node_name, network_name=network_name, log_folder=log_folder, recipients_email=recipients_email)
+                subject = f'Your node ({self.node_name}) on the {self.network_name} needs attention'
+                content = open(plainText_content).read().format(node=self.node_name, network_name=self.network_name, log_folder=log_folder, recipients_email=recipients_email)
 
                 # Send Email
-                email_sent = self.send_email(subject, content, node_name, network_name, recipients_email=recipients_email, cc_email=cc_email)
+                email_sent = self.send_email(subject, content, self.node_name, self.network_name, recipients_email=recipients_email, cc_email=cc_email)
                 if email_sent:
                     # Open and update the alert with the time the email was sent.
                     data["notify"][stage]["time_sent"] = str(datetime.datetime.now().strftime('%s'))
-                    with open(f'{alert_log_path}{node_name}.json', 'w') as json_file:
+                    with open(f'{self.path}{self.node_name}.json', 'w') as json_file:
                         data.update(data)
                         json_file.seek(0)
                         json.dump(data, json_file, indent=2)
-                    print(f'\033[92mEmail {stage} sent to {node_name} ({network_name})!\033[m') 
+                    print(f'\033[92mEmail {stage} sent to {self.node_name} ({self.network_name})!\033[m') 
 
             # States when the next email will be sent for the next stage.
             elif minutes < time_till_email:
                 email_eta = round(time_till_email - minutes)
-                print(f'\033[93mEmail {stage} will be sent in \033[4m{email_eta} minutes\033[m\033[93m to {node_name} ({network_name}) if not resolved.\033[m')
+                print(f'\033[93mEmail {stage} will be sent in \033[4m{email_eta} minutes\033[m\033[93m to {self.node_name} ({self.network_name}) if not resolved.\033[m')
 
         else:
-            print(f'\033[91mAll emails have been sent to {node_name}.\033[m')
+            print(f'\033[91mAll emails have been sent to {self.node_name}.\033[m')
 
     def send_email(self, subject, content, node_name, network_name, recipients_email: str = None, cc_email: str = None):
         EMAIL_ADDRESS = os.environ.get('Sovrin_Email_App_User')

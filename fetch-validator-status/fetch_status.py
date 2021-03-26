@@ -65,6 +65,8 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
         pass
     # End Of Engine
 
+    #result = [{'name': 'Medici', 'client-address': 'tcp://35.225.188.183:9702', 'node-address': 'tcp://34.66.79.136:9701', 'status': {'ok': False, 'timestamp': '1612731833', 'errors': 1}, 'errors': ['timeout']},{'name': 'mitrecorp', 'client-address': 'tcp://52.207.178.56:9779', 'node-address': 'tcp://54.144.209.223:9797', 'status': {'ok': False, 'timestamp': '1612731833', 'errors': 1}, 'errors': ['timeout']}]
+    # result = {"name": "BLQZnode","client-address": "tcp://62.171.142.30:9702","node-address": "tcp://62.171.141.153:9701","status": {"ok": False,"uptime": "0:21:04","timestamp": 1616329510,"software": {"indy-node": "1.12.4","sovrin": "1.1.89"},"errors": 6,"warnings": 1},"errors": ["Config Ledger Has_write_consensus: False","Main Ledger Has_write_consensus: False","Pool Ledger Has_write_consensus: False","Token Ledger Has_write_consensus: False","BLQZnode and regioit01 can't reach each other.","BLQZnode and regioit01 can't reach each other."]},{"name": "NECValidator","client-address": "tcp://52.69.239.67:9702","node-address": "tcp://13.230.94.222:9701","status": {"ok": True,"uptime": "150 days, 6:59:38","timestamp": 1616329510,"software": {"indy-node": "1.12.4","sovrin": "1.1.89"}},"errors": ["regioit01 and BLQZnode can't reach each other.","regioit01 and BLQZnode can't reach each other."]}
     result = await monitor_plugins.apply_all_plugins_on_value(result, network_name, response, verifiers)
     print(json.dumps(result, indent=2))
 
