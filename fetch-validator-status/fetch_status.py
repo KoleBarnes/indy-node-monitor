@@ -22,7 +22,7 @@ from plugin_collection import PluginCollection
 # import time
 from DidKey import DidKey
 
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify, make_response
 
 verbose = False
 
@@ -92,33 +92,7 @@ def list_networks():
     networks = load_network_list()
     return networks.keys()
 
-def init_network_args(network):
-    network_name = None
-    args.net = network
-    if args.net:
-        log("Loading known network list ...")
-        networks = load_network_list()
-        if args.net in networks:
-            log("Connecting to '{0}' ...".format(networks[args.net]["name"]))
-            args.genesis_url = networks[args.net]["genesisUrl"]
-            network_name = networks[args.net]["name"]
-            log(f"Setting network name = {network_name} ...")
-
-
-    if args.genesis_url:
-        download_genesis_file(args.genesis_url, args.genesis_path)
-        if not network_name:
-            network_name = args.genesis_url
-            log(f"Setting network name  = {network_name} ...")
-    if not os.path.exists(args.genesis_path):
-        print("Set the GENESIS_URL or GENESIS_PATH environment variable or argument.\n", file=sys.stderr)
-        parser.print_help()
-        exit()
-
-    return network_name
-
-def init_network_args_test(network: str = None, genesis_url: str = None, genesis_path: str = None):
-    network_name = None
+def init_network_args(network: str = None, genesis_url: str = None, genesis_path: str = None):
     genesis_path = args.genesis_path
 
     if network:
@@ -128,7 +102,6 @@ def init_network_args_test(network: str = None, genesis_url: str = None, genesis
             log("Connecting to '{0}' ...".format(networks[network]["name"]))
             genesis_url = networks[network]["genesisUrl"]
             network_name = networks[network]["name"]
-            log(f"Setting network name = {network_name} ...")
 
     if genesis_url:
         download_genesis_file(genesis_url, genesis_path)
@@ -145,23 +118,20 @@ def init_network_args_test(network: str = None, genesis_url: str = None, genesis
 
     return network_info
 
-#def init_seed():
-    # if "seed" in request.headers:
-    #     ident = DidKey(request.headers["seed"])
-    #     log("DID:", ident.did, " Verkey:", ident.verkey)
-    # else:
-    #     ident = None
-    # return ident
-
 # ==========================================================
 # REST API
 # ----------------------------------------------------------
-
 app = Flask(__name__)
 
 @app.route("/helloworld", methods=['GET'])
 async def HelloWorld():
-    return {"data": "Hello World"}
+    to_echo = request.args.get("echo", "")
+    response = "{}".format(to_echo)
+    to_test = request.args.get("test", "")
+    response2 = "{}".format(to_test)
+    return {'response': response, 'response2': response2}
+    # return make_response(jsonify({'success': True}), 404)
+    # return {"data": "Hello World"}
 
 @app.route("/networks", methods=['GET'])
 async def networks():
@@ -170,30 +140,32 @@ async def networks():
 
 @app.route("/networks/<network>", methods=['GET'])
 async def network(network):
-    network_info = init_network_args_test(network=network)
+    network_info = init_network_args(network=network)
 
-    # ident = init_seed()
-    ident = None
-
-    pre_result_check = {"genesis_path": network_info.genesis_path, "genesis_url": network_info.genesis_url, "ident": ident, "network_name": network_info.network_name, "network": network}
-    print(pre_result_check)
+    if "seed" in request.headers:
+        ident = DidKey(request.headers.get("seed"))
+        log("DID:", ident.did, " Verkey:", ident.verkey)
+    else:
+        ident = None
 
     result = await fetch_status(genesis_path=network_info.genesis_path, ident=ident, network_name=network_info.network_name)
     return jsonify(result)
 
 @app.route('/networks/<network>/<node>', methods=['GET'])
 async def node(network, node):
-    network_info = init_network_args_test(network=network)
+    network_info = init_network_args(network=network)
 
-    # ident = init_seed()
-    ident = None
+    if "seed" in request.headers:
+        ident = DidKey(request.headers.get("seed"))
+        log("DID:", ident.did, " Verkey:", ident.verkey)
+    else:
+        ident = None
 
-    pre_result_check = {"genesis_path": network_info.genesis_path, "genesis_url": network_info.genesis_url, "nodes": node, "ident": ident, "network_name": network_info.network_name, "network": network}
-    print(pre_result_check)
+    # pre_result_check = {"genesis_path": network_info.genesis_path, "genesis_url": network_info.genesis_url, "nodes": node, "ident": ident, "network_name": network_info.network_name, "network": network}
+    # print(pre_result_check)
 
     result = await fetch_status(network_info.genesis_path, node, ident, network_info.network_name)
     return jsonify(result)
-        
 
 # ==========================================================
 
@@ -234,6 +206,6 @@ if __name__ == "__main__":
         log("Starting web server ...")
         app.run(host="0.0.0.0", port=8080, debug=True)
     else:
-        network_name = init_network_args(args.net)
+        network_info = init_network_args(network=args.net)
         log("Starting from the command line ...")
-        asyncio.get_event_loop().run_until_complete(fetch_status(args.genesis_path, args.nodes, ident, network_name))
+        asyncio.get_event_loop().run_until_complete(fetch_status(network_info.genesis_path, args.nodes, ident, network_info.network_name))
