@@ -72,7 +72,8 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
     # End Of Engine
 
     result = await monitor_plugins.apply_all_plugins_on_value(result, network_name, response, verifiers)
-    print(json.dumps(result, indent=2))
+    if not args.web:
+        print(json.dumps(result, indent=2))
     return result
 
 def get_script_dir():
