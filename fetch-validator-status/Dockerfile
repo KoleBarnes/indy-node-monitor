@@ -1,6 +1,7 @@
 FROM bcgovimages/von-image:next-1
 
-RUN pip install pynacl gspread oauth2client
+ADD requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 ADD networks.json .
 ADD *.py ./

@@ -22,6 +22,8 @@ from plugin_collection import PluginCollection
 # import time
 from DidKey import DidKey
 
+from flask import Flask, jsonify
+
 verbose = False
 
 
@@ -31,10 +33,12 @@ def log(*args):
 
 
 async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = None, network_name: str = None):
+   
     # Start Of Engine
     attempt = 3
     while attempt:
         try:
+            log("Connecting to Pool ...")
             pool = await open_pool(transactions_path=genesis_path)
         except:
             log("Pool Timed Out! Trying again...")
@@ -43,6 +47,8 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
                 exit()
             attempt -= 1
             continue
+        else:
+            log("Connected to Pool ...")
         break
 
     result = []
@@ -67,11 +73,11 @@ async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = Non
 
     result = await monitor_plugins.apply_all_plugins_on_value(result, network_name, response, verifiers)
     print(json.dumps(result, indent=2))
+    return result
 
 def get_script_dir():
     return os.path.dirname(os.path.realpath(__file__))
 
-              
 def download_genesis_file(url: str, target_local_path: str):
     log("Fetching genesis file ...")
     target_local_path = f"{get_script_dir()}/genesis.txn"
@@ -86,6 +92,115 @@ def list_networks():
     networks = load_network_list()
     return networks.keys()
 
+def init_network_args(network):
+    network_name = None
+    args.net = network
+    if args.net:
+        log("Loading known network list ...")
+        networks = load_network_list()
+        if args.net in networks:
+            log("Connecting to '{0}' ...".format(networks[args.net]["name"]))
+            args.genesis_url = networks[args.net]["genesisUrl"]
+            network_name = networks[args.net]["name"]
+            log(f"Setting network name = {network_name} ...")
+
+
+    if args.genesis_url:
+        download_genesis_file(args.genesis_url, args.genesis_path)
+        if not network_name:
+            network_name = args.genesis_url
+            log(f"Setting network name  = {network_name} ...")
+    if not os.path.exists(args.genesis_path):
+        print("Set the GENESIS_URL or GENESIS_PATH environment variable or argument.\n", file=sys.stderr)
+        parser.print_help()
+        exit()
+
+    return network_name
+
+# def init_network_args_test(network, genesis_url, genesis_path):
+#     network_name = None
+#     if network:
+#         log("Loading known network list ...")
+#         networks = load_network_list()
+#         if network in networks:
+#             log("Connecting to '{0}' ...".format(networks[network]["name"]))
+#             args.genesis_url = networks[network]["genesisUrl"]
+#             network_name = networks[network]["name"]
+#             log(f"Setting network name  = {network_name} ...")
+
+#     if genesis_url:
+#         download_genesis_file(genesis_url, genesis_path)
+#         if not network_name:
+#             network_name = genesis_url
+#             log(f"Setting network name  = {network_name} ...")
+#     if not os.path.exists(genesis_path):
+#         print("Set the GENESIS_URL or GENESIS_PATH environment variable or argument.\n", file=sys.stderr)
+#         parser.print_help()
+#         exit()
+
+#     return network_name, genesis_url, genesis_path
+
+# ==========================================================
+# REST API
+# ----------------------------------------------------------
+
+app = Flask(__name__)
+
+@app.route("/helloworld")
+async def HelloWorld():
+    return {"data": "Hello World"}
+
+@app.route("/networks")
+async def networks():
+    data = load_network_list()
+    return data
+
+@app.route("/networks/<network>")
+async def network(network):
+        genesis_path = args.genesis_path
+
+        if network:
+            log("Loading known network list ...")
+            networks = load_network_list()
+            if network in networks:
+                log("Connecting to '{0}' ...".format(networks[network]["name"]))
+                genesis_url = networks[network]["genesisUrl"]
+                network_name = networks[network]["name"]
+
+        if genesis_url:
+            download_genesis_file(genesis_url, genesis_path)
+            if not network_name:
+                network_name = genesis_url
+                log(f"Setting network name  = {network_name} ...")
+        if not os.path.exists(genesis_path):
+            print("Set the GENESIS_URL or GENESIS_PATH environment variable or argument.\n", file=sys.stderr)
+            parser.print_help()
+
+        # if "seed" in request.headers:
+        #     ident = DidKey(request.headers["seed"])
+        #     log("DID:", ident.did, " Verkey:", ident.verkey)
+        # else:
+        #     ident = None
+
+        ident = None
+        nodes = None
+
+        '''
+        genesis_path: str
+        nodes: str = None
+        ident: DidKey = None
+        network_name: str = None
+        '''
+
+        pre_result_check = {"genesis_path": genesis_path, "genesis_url": genesis_url, "nodes": nodes, "ident": ident, "network_name": network_name, "network": network}
+        # print(pre_result_check)
+        result = await fetch_status(genesis_path, nodes, ident, network_name)
+        log(result)
+        return jsonify(result)
+        
+
+# ==========================================================
+
 if __name__ == "__main__":
     monitor_plugins = PluginCollection('plugins')
 
@@ -97,6 +212,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--seed", default=os.environ.get('SEED') , help="The privileged DID seed to use for the ledger requests.  Can be specified using the 'SEED' environment variable. If DID seed is not given the request will run anonymously.")
     parser.add_argument("--nodes", help="The comma delimited list of the nodes from which to collect the status.  The default is all of the nodes in the pool.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging.")
+    parser.add_argument("--web", action="store_true", help="Start API server.")
 
     monitor_plugins.get_parse_args(parser)
     args, unknown = parser.parse_known_args()
@@ -109,24 +225,6 @@ if __name__ == "__main__":
         print(json.dumps(load_network_list(), indent=2))
         exit()
 
-    network_name = None 
-    if args.net:
-        log("Loading known network list ...")
-        networks = load_network_list()
-        if args.net in networks:
-            log("Connecting to '{0}' ...".format(networks[args.net]["name"]))
-            args.genesis_url = networks[args.net]["genesisUrl"]
-            network_name = networks[args.net]["name"]
-
-    if args.genesis_url:
-        download_genesis_file(args.genesis_url, args.genesis_path)
-        if not network_name: 
-            network_name = args.genesis_url
-    if not os.path.exists(args.genesis_path):
-        print("Set the GENESIS_URL or GENESIS_PATH environment variable or argument.\n", file=sys.stderr)
-        parser.print_help()
-        exit()
-
     did_seed = None if not args.seed else args.seed
 
     log("indy-vdr version:", indy_vdr.version())
@@ -136,4 +234,10 @@ if __name__ == "__main__":
     else:
         ident = None
 
-    asyncio.get_event_loop().run_until_complete(fetch_status(args.genesis_path, args.nodes, ident, network_name))
+    if args.web:
+        log("Starting web server ...")
+        app.run(host="0.0.0.0", port=8080, debug=True)
+    else:
+        network_name = init_network_args(args.net)
+        log("Starting from the command line ...")
+        asyncio.get_event_loop().run_until_complete(fetch_status(args.genesis_path, args.nodes, ident, network_name))
