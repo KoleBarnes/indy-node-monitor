@@ -32,7 +32,7 @@ def log(*args):
         print(*args, "\n", file=sys.stderr)
 
 
-async def fetch_status(genesis_path: str, nodes: str = None, ident: DidKey = None, network_name: str = None):
+async def fetch_status(monitor_plugins: PluginCollection, genesis_path: str, nodes: str = None, ident: DidKey = None, network_name: str = None):
    
     # Start Of Engine
     attempt = 3
@@ -109,6 +109,7 @@ def init_network_args(network: str = None, genesis_url: str = None, genesis_path
         if not network_name:
             network_name = genesis_url
             log(f"Setting network name  = {network_name} ...")
+
     if not os.path.exists(genesis_path):
         print("Set the GENESIS_URL or GENESIS_PATH environment variable or argument.\n", file=sys.stderr)
         parser.print_help()
@@ -124,6 +125,30 @@ def init_network_args(network: str = None, genesis_url: str = None, genesis_path
 # ----------------------------------------------------------
 app = Flask(__name__)
 
+def set_plugin_parameters():
+    '''
+    Takes the argparse namespace and rewrites it with the parameters gotten from the API. 
+    Applies the new args to all plug-ins.
+    Returns instance of plug-ins.
+    '''
+    api_monitor_plugins = PluginCollection('plugins')
+
+    api_args = argparse.Namespace()
+    for name, value in args._get_kwargs():
+        setattr(api_args, name, value)
+
+    for key in request.args:
+        if request.args[key].lower() == 'true':
+            value = True
+        elif request.args[key].lower() == 'false':
+            value = False
+        else:
+            value = request.args[key]
+        setattr(api_args, key, value)
+    # print(api_args)
+    api_monitor_plugins.load_all_parse_args(api_args)
+    return api_monitor_plugins
+
 @app.route("/networks", methods=['GET'])
 async def networks():
     data = load_network_list()
@@ -131,6 +156,7 @@ async def networks():
 
 @app.route("/networks/<network>", methods=['GET'])
 async def network(network):
+    api_monitor_plugins = set_plugin_parameters()
     network_info = init_network_args(network=network)
 
     if "seed" in request.headers:
@@ -139,11 +165,12 @@ async def network(network):
     else:
         ident = None
 
-    result = await fetch_status(genesis_path=network_info.genesis_path, ident=ident, network_name=network_info.network_name)
+    result = await fetch_status(monitor_plugins=api_monitor_plugins, genesis_path=network_info.genesis_path, ident=ident, network_name=network_info.network_name)
     return jsonify(result)
 
 @app.route('/networks/<network>/<node>', methods=['GET'])
 async def node(network, node):
+    api_monitor_plugins = set_plugin_parameters()
     network_info = init_network_args(network=network)
 
     if "seed" in request.headers:
@@ -152,9 +179,8 @@ async def node(network, node):
     else:
         ident = None
 
-    result = await fetch_status(network_info.genesis_path, node, ident, network_info.network_name)
+    result = await fetch_status(api_monitor_plugins, network_info.genesis_path, node, ident, network_info.network_name)
     return jsonify(result)
-
 # ==========================================================
 
 if __name__ == "__main__":
@@ -194,6 +220,6 @@ if __name__ == "__main__":
         log("Starting web server ...")
         app.run(host="0.0.0.0", port=8080, debug=True)
     else:
-        network_info = init_network_args(network=args.net)
+        network_info = init_network_args(network=args.net, genesis_url=args.genesis_url, genesis_path=args.genesis_path)
         log("Starting from the command line ...")
-        asyncio.get_event_loop().run_until_complete(fetch_status(network_info.genesis_path, args.nodes, ident, network_info.network_name))
+        asyncio.get_event_loop().run_until_complete(fetch_status(monitor_plugins, network_info.genesis_path, args.nodes, ident, network_info.network_name))
