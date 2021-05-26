@@ -123,16 +123,6 @@ def init_network_args(network: str = None, genesis_url: str = None, genesis_path
 # ----------------------------------------------------------
 app = Flask(__name__)
 
-@app.route("/helloworld", methods=['GET'])
-async def HelloWorld():
-    to_echo = request.args.get("echo", "")
-    response = "{}".format(to_echo)
-    to_test = request.args.get("test", "")
-    response2 = "{}".format(to_test)
-    return {'response': response, 'response2': response2}
-    # return make_response(jsonify({'success': True}), 404)
-    # return {"data": "Hello World"}
-
 @app.route("/networks", methods=['GET'])
 async def networks():
     data = load_network_list()
@@ -160,9 +150,6 @@ async def node(network, node):
         log("DID:", ident.did, " Verkey:", ident.verkey)
     else:
         ident = None
-
-    # pre_result_check = {"genesis_path": network_info.genesis_path, "genesis_url": network_info.genesis_url, "nodes": node, "ident": ident, "network_name": network_info.network_name, "network": network}
-    # print(pre_result_check)
 
     result = await fetch_status(network_info.genesis_path, node, ident, network_info.network_name)
     return jsonify(result)
