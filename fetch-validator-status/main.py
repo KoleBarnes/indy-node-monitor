@@ -39,11 +39,11 @@ if __name__ == "__main__":
         enable_verbose(args.verbose)
 
         if args.list_nets:
-            print(json.dumps(Networks.get_details(), indent=2))
+            print(json.dumps(Networks.get_networks(), indent=2))
             exit()
 
         log("indy-vdr version:", indy_vdr.version())
-        did_seed = None if not args.seed else args.seed    
+        did_seed = None if not args.seed else args.seed
         ident = create_did(did_seed)
         networks = Networks()
         pool_collection = PoolCollection(args.verbose, networks)
